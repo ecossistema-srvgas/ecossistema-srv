@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="SRV GÁS® — Plano de Compra · Comprador Estratégico">
+<title>SRV GÁS® — Plano de Compra</title>
+<!-- ── Acesso restrito (mesma sessão do HUB) ─────────────────────────────── -->
+<style id="srv-auth-style">body{visibility:hidden}html.srv-auth-ok body{visibility:visible}
+#srv-auth{position:fixed;inset:0;z-index:2147483647;background:#0D1B3E;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',Arial,sans-serif}
+#srv-auth .box{background:#fff;padding:32px 28px;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;width:280px}
+#srv-auth h2{margin:0 0 4px;color:#393E9C;font-size:20px;font-weight:700}
+#srv-auth p{margin:0 0 18px;color:#6B7BAE;font-size:13px}
+#srv-auth input{width:100%;padding:11px 12px;border:2px solid #D6E0F0;border-radius:8px;font-size:18px;text-align:center;letter-spacing:4px;box-sizing:border-box;outline:none}
+#srv-auth input:focus{border-color:#393E9C}
+#srv-auth button{width:100%;margin-top:12px;padding:11px;border:0;border-radius:8px;background:#393E9C;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+#srv-auth .err{color:#C0392B;font-size:12px;height:14px;margin-top:8px}</style>
+<script>
+(function(){
+  var SENHA='1234', KEY='srv_auth_hub';
+  function libera(){document.documentElement.classList.add('srv-auth-ok');var o=document.getElementById('srv-auth');if(o)o.remove();}
+  if(sessionStorage.getItem(KEY)==='ok'){document.addEventListener('DOMContentLoaded',libera);return;}
+  document.addEventListener('DOMContentLoaded',function(){
+    var ov=document.createElement('div');ov.id='srv-auth';
+    ov.innerHTML='<div class="box"><h2>SRV GÁS®</h2><p>Acesso restrito</p><input id="srv-auth-in" type="password" inputmode="numeric" autocomplete="off" placeholder="••••"><div class="err" id="srv-auth-err"></div><button id="srv-auth-btn">Entrar</button></div>';
+    document.documentElement.appendChild(ov);
+    var inp=document.getElementById('srv-auth-in');inp.focus();
+    function tenta(){if(inp.value===SENHA){sessionStorage.setItem(KEY,'ok');libera();}else{document.getElementById('srv-auth-err').textContent='Senha incorreta';inp.value='';inp.focus();}}
+    document.getElementById('srv-auth-btn').addEventListener('click',tenta);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter')tenta();});
+  });
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- ECOSSISTEMA SRV — plano de compra (gerado por _estoquista/gerar_compras.js) -->
+<script src="../base_compras.js"></script>
+<style>
+:root{
+  --primary:#393E9C; --primary-dark:#2a2f7a; --primary-light:#4a51c4;
+  --secondary:#69BAEF; --secondary-light:#a8d8f5;
+  --ink:#0D1B3E; --bg:#F0F4FA; --card:#FFFFFF; --border:#D6E0F0; --muted:#6B7BAE;
+  --green:#0E7C4A; --green-bg:#E6F5EE;
+  --yellow:#B07800; --yellow-bg:#FFF8E0;
+  --orange:#C26A00; --orange-bg:#FFF0DD;
+  --red:#C0392B; --red-bg:#FDECEA;
+  --gray:#8A96B0; --gray-bg:#F0F2F8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+
+.header{background:var(--primary);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(57,62,156,.4);}
+.logo{display:flex;flex-direction:column;}
+.logo-text{color:#fff;font-size:18px;font-weight:700;letter-spacing:.06em;}
+.logo-text sup{color:var(--secondary);font-size:11px;}
+.logo-slogan{color:var(--secondary-light);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-top:1px;}
+.back{color:var(--secondary-light);font-size:11px;font-family:'DM Mono',monospace;text-decoration:none;display:flex;align-items:center;gap:6px;}
+.back:hover{color:#fff;}
+
+.hero{background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary) 55%,var(--primary-light) 100%);padding:32px 28px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(105,186,239,.22) 0%,transparent 60%);}
+.hero-inner{max-width:1180px;margin:0 auto;position:relative;}
+.hero-tag{display:inline-block;background:rgba(105,186,239,.2);border:1px solid rgba(105,186,239,.35);color:var(--secondary);font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;padding:3px 12px;border-radius:20px;margin-bottom:10px;}
+.hero-title{color:#fff;font-size:26px;font-weight:700;line-height:1.2;}
+.hero-title em{color:var(--secondary);font-style:normal;}
+.hero-sub{color:rgba(255,255,255,.65);font-size:12.5px;font-weight:500;margin-top:7px;}
+.hero-kpis{display:flex;gap:14px;margin-top:18px;flex-wrap:wrap;}
+.kpi{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:11px 18px;text-align:center;min-width:104px;}
+.kpi-val{font-size:26px;font-weight:700;color:#fff;line-height:1;font-family:'DM Mono',monospace;}
+.kpi-val.red{color:#ff9090;} .kpi-val.yellow{color:#ffd970;} .kpi-val.green{color:#7ddfb0;}
+.kpi-label{font-size:9px;color:rgba(255,255,255,.55);letter-spacing:.12em;text-transform:uppercase;margin-top:5px;}
+
+.wrap{max-width:1180px;margin:0 auto;padding:22px 28px 56px;}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px;}
+.chip{font-size:11px;font-weight:600;letter-spacing:.04em;padding:6px 13px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;font-family:'Rajdhani',sans-serif;transition:all .12s;}
+.chip:hover{border-color:#c2d0ea;}
+.chip.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+.chip .n{font-family:'DM Mono',monospace;opacity:.85;}
+
+.forn{background:var(--card);border:1.5px solid var(--border);border-radius:9px;margin-bottom:12px;overflow:hidden;}
+.forn-head{display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer;user-select:none;border-left:4px solid var(--gray);}
+.forn-head:hover{background:#fafcff;}
+.forn.p-RUPTURA .forn-head{border-left-color:var(--red);}
+.forn.p-CRITICO .forn-head{border-left-color:var(--orange);}
+.forn.p-URGENTE .forn-head{border-left-color:var(--yellow);}
+.forn.p-ATENCAO .forn-head{border-left-color:var(--secondary);}
+.forn.p-PLANEJADO .forn-head{border-left-color:var(--gray);}
+.forn-name{font-size:15px;font-weight:700;color:var(--ink);flex:1;letter-spacing:.02em;}
+.forn-name .warn{color:var(--red);font-size:11px;font-weight:600;margin-left:8px;}
+.forn-meta{display:flex;gap:18px;font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);}
+.forn-meta b{color:var(--primary);font-weight:600;}
+.forn-meta .val{color:var(--ink);font-weight:600;}
+.forn-arrow{color:var(--muted);font-size:13px;transition:transform .15s;}
+.forn.open .forn-arrow{transform:rotate(90deg);}
+.forn-body{display:none;}
+.forn.open .forn-body{display:block;}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead th{background:var(--gray-bg);color:var(--muted);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);}
+tbody td{padding:8px 12px;border-bottom:1px solid #eef2f9;}
+tbody tr:hover{background:#fafcff;}
+td.num{font-family:'DM Mono',monospace;text-align:right;}
+td.sku{font-family:'DM Mono',monospace;color:var(--primary-dark);font-weight:500;}
+.badge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:11px;text-transform:uppercase;}
+.b-RUPTURA{background:var(--red-bg);color:var(--red);}
+.b-CRITICO{background:var(--orange-bg);color:var(--orange);}
+.b-URGENTE{background:var(--yellow-bg);color:var(--yellow);}
+.b-ATENCAO{background:#E7F2FB;color:#1E6FA8;}
+.b-PLANEJADO{background:var(--gray-bg);color:var(--gray);}
+.dur0{color:var(--red);font-weight:700;}
+.neg{color:var(--red);}
+
+.foot{max-width:1180px;margin:0 auto;padding:6px 28px 40px;font-size:10px;font-family:'DM Mono',monospace;color:var(--gray);}
+.empty{text-align:center;color:var(--muted);padding:50px;font-size:14px;}
+@media (max-width:760px){.forn-meta{display:none;} .hero-title{font-size:22px;}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-text">SRV GÁS<sup>®</sup></div>
+    <div class="logo-slogan">Plano de Compra</div>
+  </div>
+  <a class="back" href="HUB.html">← Voltar ao HUB</a>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <span class="hero-tag">Comprador Estratégico</span>
+    <div class="hero-title">Plano de <em>Compra</em> por Fornecedor</div>
+    <div class="hero-sub" id="sub">Consolidado do que comprar, de quem e com que prioridade — ruptura primeiro.</div>
+    <div class="hero-kpis" id="kpis"></div>
+  </div>
+</section>
+
+<main class="wrap">
+  <div class="toolbar" id="filtros"></div>
+  <div id="lista"></div>
+</main>
+
+<div class="foot" id="foot"></div>
+
+<script>
+const fmtBRL = n => 'R$ ' + (n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtK   = n => 'R$ ' + Math.round((n||0)/1000) + 'k';
+const PRIOS  = ['RUPTURA','CRITICO','URGENTE','ATENCAO','PLANEJADO'];
+const ROTULO = {RUPTURA:'Ruptura',CRITICO:'Crítico',URGENTE:'Urgente',ATENCAO:'Atenção',PLANEJADO:'Planejado'};
+const durTxt = d => d===0 ? 'RUPTURA' : d>=9999 ? '∞' : d+'d';
+
+let FILTRO = 'TODOS';
+
+(function(){
+  const B = window.BASE_COMPRAS;
+  if(!B || !Array.isArray(B.porFornecedor)){
+    document.getElementById('lista').innerHTML =
+      '<div class="empty">base_compras.js não encontrada. Rode <code>node _estoquista/gerar_compras.js</code> e recarregue.</div>';
+    return;
+  }
+  const m = B.meta||{}, r = B.resumo||{}, cx = B.caixa||{};
+
+  document.getElementById('sub').textContent =
+    `Base do Bling de ${m.base_estoque_data||'—'} · horizonte de compra ${m.horizonte_compra_dias||120}d · ${m.fornecedores||0} fornecedores`;
+
+  document.getElementById('kpis').innerHTML =
+    `<div class="kpi"><div class="kpi-val">${(m.total_itens||0).toLocaleString('pt-BR')}</div><div class="kpi-label">Itens a comprar</div></div>`+
+    `<div class="kpi"><div class="kpi-val">${(m.total_unidades||0).toLocaleString('pt-BR')}</div><div class="kpi-label">Unidades</div></div>`+
+    `<div class="kpi"><div class="kpi-val yellow">${fmtK(m.total_valor)}</div><div class="kpi-label">Valor do plano</div></div>`+
+    `<div class="kpi"><div class="kpi-val red">${r.RUPTURA||0}</div><div class="kpi-label">Em ruptura</div></div>`+
+    `<div class="kpi"><div class="kpi-val">${fmtK(cx.totalAberto)}</div><div class="kpi-label">A pagar · pico ${cx.mesPico||'—'}</div></div>`;
+
+  // Filtros por prioridade
+  const fbox = document.getElementById('filtros');
+  let chips = `<div class="chip active" data-f="TODOS">Todos <span class="n">${m.total_itens||0}</span></div>`;
+  PRIOS.forEach(p=>{ if(r[p]) chips += `<div class="chip" data-f="${p}">${ROTULO[p]} <span class="n">${r[p]}</span></div>`; });
+  fbox.innerHTML = chips;
+  fbox.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+    fbox.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active'); FILTRO = c.dataset.f; render();
+  }));
+
+  document.getElementById('foot').textContent =
+    `Comprador Estratégico · SRV Gás · plano gerado ${m.data||'—'} · fonte base_compras.json (motor _estoquista)`;
+
+  render();
+
+  function render(){
+    const cont = document.getElementById('lista');
+    let html = '';
+    let grupos = B.porFornecedor;
+    B.porFornecedor.forEach((f, idx)=>{
+      const itens = FILTRO==='TODOS' ? f.itens : f.itens.filter(i=>i.prioridade===FILTRO);
+      if(!itens.length) return;
+      const unid = itens.reduce((s,i)=>s+i.qtd,0);
+      const val  = itens.reduce((s,i)=>s+i.valor,0);
+      const semForn = /não definido|sem fornecedor/i.test(f.fornecedor);
+      const aberto = (FILTRO!=='TODOS' || idx<3) ? ' open' : '';
+      html += `<div class="forn p-${f.prioridadeTopo}${aberto}">`+
+        `<div class="forn-head" onclick="this.parentNode.classList.toggle('open')">`+
+          `<span class="forn-arrow">▶</span>`+
+          `<span class="forn-name">${esc(f.fornecedor)}${semForn?'<span class="warn">⚠ cadastrar fornecedor no Bling</span>':''}</span>`+
+          `<span class="forn-meta"><span><b>${itens.length}</b> itens</span><span><b>${unid.toLocaleString('pt-BR')}</b> un</span><span class="val">${fmtBRL(val)}</span></span>`+
+        `</div>`+
+        `<div class="forn-body"><table><thead><tr>`+
+          `<th>SKU</th><th>Produto</th><th>UN</th><th style="text-align:right">Estoque</th>`+
+          `<th style="text-align:right">Comprar</th><th style="text-align:right">Custo un</th><th style="text-align:right">Valor</th><th>Cobertura</th><th>Prioridade</th>`+
+        `</tr></thead><tbody>`;
+      itens.forEach(i=>{
+        html += `<tr>`+
+          `<td class="sku">${esc(i.sku)}</td>`+
+          `<td>${esc((i.produto||'').slice(0,54))}</td>`+
+          `<td>${esc(i.un||'')}</td>`+
+          `<td class="num ${i.estoque_total<0?'neg':''}">${i.estoque_total}</td>`+
+          `<td class="num"><b>${i.qtd.toLocaleString('pt-BR')}</b></td>`+
+          `<td class="num">${fmtBRL(i.custo)}</td>`+
+          `<td class="num">${fmtBRL(i.valor)}</td>`+
+          `<td class="${i.duracao===0?'dur0':''}">${durTxt(i.duracao)}</td>`+
+          `<td><span class="badge b-${i.prioridade}">${ROTULO[i.prioridade]}</span></td>`+
+        `</tr>`;
+      });
+      html += `</tbody></table></div></div>`;
+    });
+    cont.innerHTML = html || '<div class="empty">Nenhum item nesta prioridade.</div>';
+  }
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+})();
+</script>
+</body>
+</html>

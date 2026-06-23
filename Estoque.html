@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<!-- ECOSSISTEMA SRV — base central do Bling (gerada por _estoquista/coletar.js) -->
+<script src="../base_estoque.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="SRV GÁS® — Painel de Provisão de Compra v1.0 · Uso interno">
+<meta name="author" content="SRV GÁS®">
+<title>SRV GÁS® — Painel de Provisão de Compra v1.0</title>
+<!-- ── Acesso restrito (senha) ───────────────────────────────────────────── -->
+<style id="srv-auth-style">body{visibility:hidden}html.srv-auth-ok body{visibility:visible}
+#srv-auth{position:fixed;inset:0;z-index:2147483647;background:#0D1B3E;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',Arial,sans-serif}
+#srv-auth .box{background:#fff;padding:32px 28px;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;width:280px}
+#srv-auth h2{margin:0 0 4px;color:#393E9C;font-size:20px;font-weight:700}
+#srv-auth p{margin:0 0 18px;color:#6B7BAE;font-size:13px}
+#srv-auth input{width:100%;padding:11px 12px;border:2px solid #D6E0F0;border-radius:8px;font-size:18px;text-align:center;letter-spacing:4px;box-sizing:border-box;outline:none}
+#srv-auth input:focus{border-color:#393E9C}
+#srv-auth button{width:100%;margin-top:12px;padding:11px;border:0;border-radius:8px;background:#393E9C;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+#srv-auth .err{color:#C0392B;font-size:12px;height:14px;margin-top:8px}</style>
+<script>
+(function(){
+  var SENHA='1234', KEY='srv_auth_estoque';
+  function libera(){document.documentElement.classList.add('srv-auth-ok');var o=document.getElementById('srv-auth');if(o)o.remove();}
+  if(sessionStorage.getItem(KEY)==='ok'){document.addEventListener('DOMContentLoaded',libera);return;}
+  document.addEventListener('DOMContentLoaded',function(){
+    var ov=document.createElement('div');ov.id='srv-auth';
+    ov.innerHTML='<div class="box"><h2>SRV GÁS®</h2><p>Acesso restrito</p><input id="srv-auth-in" type="password" inputmode="numeric" autocomplete="off" placeholder="••••"><div class="err" id="srv-auth-err"></div><button id="srv-auth-btn">Entrar</button></div>';
+    document.documentElement.appendChild(ov);
+    var inp=document.getElementById('srv-auth-in');inp.focus();
+    function tenta(){if(inp.value===SENHA){sessionStorage.setItem(KEY,'ok');libera();}else{document.getElementById('srv-auth-err').textContent='Senha incorreta';inp.value='';inp.focus();}}
+    document.getElementById('srv-auth-btn').addEventListener('click',tenta);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter')tenta();});
+  });
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary:#393E9C; --primary-dark:#2a2f7a; --primary-light:#4a51c4;
+  --secondary:#69BAEF; --secondary-light:#a8d8f5;
+  --ink:#0D1B3E; --bg:#F0F4FA; --card:#FFFFFF; --border:#D6E0F0; --muted:#6B7BAE;
+  --green:#0E7C4A; --green-bg:#E6F5EE;
+  --yellow:#B07800; --yellow-bg:#FFF8E0;
+  --red:#C0392B; --red-bg:#FDECEA;
+  --gray:#8A96B0; --gray-bg:#F0F2F8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+input[type=file]{display:none;}
+
+/* ── HEADER ── */
+.header{background:var(--primary);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(57,62,156,.4);}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-text{color:#fff;font-size:18px;font-weight:700;letter-spacing:.06em;}
+.logo-text sup{color:var(--secondary);font-size:11px;}
+.logo-slogan{color:var(--secondary-light);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-top:1px;}
+.header-nav{display:flex;gap:2px;align-items:center;}
+.nav-hub{padding:6px 13px;color:var(--secondary-light);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:5px;transition:all .15s;}
+.nav-hub:hover{color:#fff;background:rgba(255,255,255,.14);}
+.h-tab{padding:6px 16px;color:rgba(255,255,255,.6);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;}
+.h-tab:hover{color:rgba(255,255,255,.9);}
+.h-tab.active{color:#fff;border-bottom-color:var(--secondary);}
+.header-date{color:var(--secondary-light);font-size:10px;font-family:'DM Mono',monospace;}
+
+/* ── VIEWS ── */
+.view{display:none;animation:fadeIn .25s ease;}
+.view.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── HERO EXECUTIVO ── */
+.hero{background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary) 55%,var(--primary-light) 100%);padding:36px 28px 32px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 75% 50%,rgba(105,186,239,.2) 0%,transparent 60%);}
+.hero-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center;position:relative;}
+.hero-left{}
+.hero-tag{display:inline-block;background:rgba(105,186,239,.2);border:1px solid rgba(105,186,239,.35);color:var(--secondary);font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;padding:3px 12px;border-radius:20px;margin-bottom:10px;}
+.hero-title{color:#fff;font-size:28px;font-weight:700;line-height:1.2;letter-spacing:.02em;}
+.hero-title em{color:var(--secondary);font-style:normal;}
+.hero-sub{color:rgba(255,255,255,.65);font-size:13px;font-weight:500;margin-top:8px;line-height:1.5;}
+.hero-kpis{display:flex;gap:16px;margin-top:20px;flex-wrap:wrap;}
+.kpi{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:12px 18px;text-align:center;min-width:90px;}
+.kpi-val{font-size:28px;font-weight:700;color:#fff;line-height:1;}
+.kpi-val.red{color:#ff9090;}
+.kpi-val.yellow{color:#ffd970;}
+.kpi-val.green{color:#7ddfb0;}
+.kpi-label{font-size:9px;color:rgba(255,255,255,.55);letter-spacing:.14em;text-transform:uppercase;margin-top:3px;}
+.hero-right{display:flex;flex-direction:column;gap:8px;}
+.hero-btn{padding:10px 20px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;border:none;display:flex;align-items:center;gap:8px;transition:all .15s;white-space:nowrap;}
+.hero-btn.primary{background:var(--secondary);color:var(--primary-dark);}
+.hero-btn.primary:hover{background:#4aaee8;}
+.hero-btn.outline{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.3);}
+.hero-btn.outline:hover{background:rgba(255,255,255,.22);}
+.hero-btn.danger{background:rgba(192,57,43,.85);color:#fff;}
+.hero-btn.danger:hover{background:var(--red);}
+
+/* ── TOOLBAR ── */
+.toolbar{background:var(--card);border-bottom:2px solid var(--border);padding:10px 28px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.upload-btn{background:var(--primary);color:#fff;border:none;padding:7px 14px;border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s;text-transform:uppercase;white-space:nowrap;}
+.upload-btn:hover{background:var(--primary-light);}
+.upload-btn.sec{background:transparent;color:var(--primary);border:1.5px solid var(--primary);}
+.upload-btn.sec:hover{background:var(--primary);color:#fff;}
+.upload-btn.exp{background:var(--secondary);color:var(--primary-dark);}
+.upload-btn.exp:hover{background:#4aaee8;}
+.upload-status{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;white-space:nowrap;}
+.upload-status.ok{color:var(--green);font-weight:600;}
+.sep{width:1px;height:22px;background:var(--border);flex-shrink:0;}
+.search-box{margin-left:auto;padding:7px 12px;border:1.5px solid var(--border);border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;background:var(--bg);width:220px;outline:none;color:var(--ink);}
+.search-box:focus{border-color:var(--primary);}
+
+/* ── FILTROS ── */
+.filtros{padding:8px 28px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--bg);border-bottom:1px solid var(--border);}
+.fl{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-right:2px;}
+.chip{padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--muted);transition:all .15s;letter-spacing:.04em;text-transform:uppercase;}
+.chip:hover{border-color:var(--primary);color:var(--primary);}
+.chip.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.chip.urgente{border-color:var(--red);color:var(--red);}
+.chip.urgente.active{background:var(--red);color:#fff;}
+.chip.atencao{border-color:var(--yellow);color:var(--yellow);}
+.chip.atencao.active{background:var(--yellow);color:#fff;}
+.chip.ok{border-color:var(--green);color:var(--green);}
+.chip.ok.active{background:var(--green);color:#fff;}
+.fornec-sel{padding:5px 10px;border:1.5px solid var(--border);border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;background:var(--card);outline:none;cursor:pointer;color:var(--ink);}
+
+/* ── SUMÁRIO ── */
+.sumario{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-bottom:2px solid var(--primary);}
+.sum-card{background:var(--card);padding:12px 18px;position:relative;overflow:hidden;}
+.sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sum-card.s-red::before{background:var(--red);}
+.sum-card.s-yellow::before{background:var(--yellow);}
+.sum-card.s-green::before{background:var(--green);}
+.sum-card.s-blue::before{background:var(--primary);}
+.sum-label{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
+.sum-val{font-size:30px;font-weight:700;line-height:1;}
+.sum-val.red{color:var(--red);} .sum-val.yellow{color:var(--yellow);} .sum-val.green{color:var(--green);} .sum-val.blue{color:var(--primary);}
+.sum-sub{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
+
+/* ── DASHBOARD GRID ── */
+.dash-wrap{padding:16px 28px 48px;}
+.dash-bar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+.prazo-sel{padding:5px 12px;border:1.5px solid var(--border);border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;background:var(--card);outline:none;cursor:pointer;color:var(--primary);text-transform:uppercase;letter-spacing:.06em;}
+.exp-btn{margin-left:auto;padding:7px 16px;background:var(--primary);color:#fff;border:none;border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:background .15s;}
+.exp-btn:hover{background:var(--primary-light);}
+.forn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px;}
+.forn-card{background:var(--card);border:1.5px solid var(--border);border-radius:8px;overflow:hidden;transition:box-shadow .15s;}
+.forn-card:hover{box-shadow:0 4px 20px rgba(57,62,156,.12);}
+.forn-card.has-urgente{border-left:4px solid var(--red);}
+.forn-card.has-atencao{border-left:4px solid var(--yellow);}
+.forn-card.all-ok{border-left:4px solid var(--green);}
+.forn-header{padding:9px 13px;display:flex;align-items:center;justify-content:space-between;background:#F7F9FE;border-bottom:1px solid var(--border);}
+.forn-name{font-size:12px;font-weight:700;color:var(--primary);letter-spacing:.05em;text-transform:uppercase;}
+.forn-badges{display:flex;gap:4px;}
+.fb{font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;letter-spacing:.05em;text-transform:uppercase;}
+.fb.u{background:var(--red-bg);color:var(--red);}
+.fb.a{background:var(--yellow-bg);color:var(--yellow);}
+.fb.o{background:var(--green-bg);color:var(--green);}
+.forn-items{padding:4px 0;}
+.forn-item{display:grid;grid-template-columns:1fr 76px 68px;gap:6px;padding:6px 13px;align-items:center;border-bottom:1px solid #F0F4FA;transition:background .1s;}
+.forn-item:last-child{border-bottom:none;}
+.forn-item:hover{background:#F7F9FE;}
+.fi-nome{font-size:11px;font-weight:600;line-height:1.3;color:var(--ink);}
+.fi-sku{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;}
+.fi-dur{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
+.fi-dur-val{font-size:11px;font-weight:700;font-family:'DM Mono',monospace;}
+.fi-dur-val.red{color:var(--red);} .fi-dur-val.yellow{color:var(--yellow);} .fi-dur-val.green{color:var(--green);}
+.fi-bar-bg{width:60px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.fi-bar-fill{height:100%;border-radius:2px;}
+.fi-bar-fill.red{background:var(--red);} .fi-bar-fill.yellow{background:var(--yellow);} .fi-bar-fill.green{background:var(--green);}
+.fi-compra{text-align:right;}
+.fi-cv{font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--primary);}
+.fi-cl{font-size:8px;color:var(--muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;letter-spacing:.05em;}
+.forn-more{padding:5px 13px;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;background:#F7F9FE;border-top:1px solid var(--border);cursor:pointer;}
+.forn-more:hover{color:var(--primary);}
+
+/* ── PROV TABS ── */
+.prov-tabs{display:flex;gap:0;padding:12px 28px 0;background:var(--bg);}
+.prov-tab{padding:7px 16px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:5px 5px 0 0;cursor:pointer;background:var(--card);border:1.5px solid var(--border);border-bottom:none;color:var(--muted);transition:all .15s;}
+.prov-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+
+/* ── ACTION BAR ── */
+.action-bar{display:flex;gap:8px;padding:8px 28px 0;background:var(--bg);align-items:center;}
+.act-btn{padding:5px 12px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;color:var(--primary);transition:all .15s;}
+.act-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary);}
+
+/* ── TABELA ── */
+.table-wrap{padding:0 28px 48px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;margin-top:0;border:1.5px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow:hidden;}
+thead tr{background:var(--primary);}
+th{padding:9px 12px;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;text-align:left;white-space:nowrap;cursor:pointer;user-select:none;color:rgba(255,255,255,.85);}
+th:hover{background:var(--primary-light);color:#fff;}
+th.sorted{color:var(--secondary);}
+th.nr{text-align:right;}
+td{padding:8px 12px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:nth-child(even) td{background:#F7F9FE;}
+tr:hover td{background:#EDF2FF;}
+.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+.badge.urgente{background:var(--red-bg);color:var(--red);}
+.badge.atencao{background:var(--yellow-bg);color:var(--yellow);}
+.badge.ok{background:var(--green-bg);color:var(--green);}
+.badge.inativo{background:var(--gray-bg);color:var(--gray);}
+.mono{font-family:'DM Mono',monospace;font-size:11px;}
+.nr{text-align:right;font-family:'DM Mono',monospace;font-size:12px;}
+.pnome{max-width:240px;font-weight:600;font-size:12px;}
+.ftag{display:inline-block;background:#EEF1FB;border:1px solid #C8D0EE;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;color:var(--primary);letter-spacing:.05em;text-transform:uppercase;}
+.cc{font-weight:700;color:var(--primary);font-family:'DM Mono',monospace;font-size:12px;}
+.dur-wrap{display:flex;align-items:center;gap:7px;}
+.dur-bg{width:60px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;flex-shrink:0;}
+.dur-fill{height:100%;border-radius:3px;}
+.dur-fill.red{background:var(--red);} .dur-fill.yellow{background:var(--yellow);} .dur-fill.green{background:var(--green);} .dur-fill.gray{background:var(--gray);}
+.dur-v{font-family:'DM Mono',monospace;font-size:11px;min-width:34px;text-align:right;}
+
+/* ── MODAL ── */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(57,62,156,.55);z-index:300;align-items:center;justify-content:center;}
+.modal-ov.show{display:flex;}
+.modal-box{background:#fff;border-radius:8px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 8px 40px rgba(57,62,156,.25);}
+.modal-title{font-size:16px;font-weight:700;color:var(--primary);margin-bottom:8px;}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.5;}
+.modal-stats{background:var(--bg);border-radius:5px;padding:12px 16px;margin-bottom:20px;}
+.modal-stats p{font-size:12px;font-family:'DM Mono',monospace;color:var(--ink);margin:2px 0;}
+.modal-stats p strong{color:var(--primary);}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+.mbtn{padding:8px 18px;border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;border:none;}
+.mbtn.ok{background:var(--primary);color:#fff;}
+.mbtn.ok:hover{background:var(--primary-light);}
+.mbtn.cancel{background:var(--bg);color:var(--muted);border:1.5px solid var(--border);}
+
+/* ── GUIA ── */
+.guia{display:none;background:#EEF1FB;border-bottom:1px solid #C8D0EE;padding:10px 28px;font-size:11px;font-family:'DM Mono',monospace;color:var(--primary);line-height:1.8;}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:50px 20px;color:var(--muted);font-size:15px;}
+.empty strong{display:block;font-size:20px;color:var(--primary);margin-bottom:8px;font-weight:700;}
+
+
+/* ── PERSISTÊNCIA ── */
+.persist-bar {
+  background: var(--green-bg);
+  border-bottom: 1px solid #8ecfb0;
+  padding: 6px 28px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--green);
+  font-family: 'DM Mono', monospace;
+}
+.persist-bar.show { display: flex; }
+.persist-bar.warn { background: var(--yellow-bg); border-color: #e8c74d; color: var(--yellow); }
+.persist-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; animation: pulse 2s infinite; }
+.persist-bar.warn .persist-dot { background: var(--yellow); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.persist-reset {
+  margin-left: auto;
+  padding: 3px 10px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: transparent;
+  color: inherit;
+  transition: all .15s;
+  opacity: .7;
+}
+.persist-reset:hover { opacity: 1; }
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--primary);color:#fff;padding:12px 20px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;letter-spacing:.04em;transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;box-shadow:0 4px 20px rgba(57,62,156,.4);}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{background:var(--green);}
+
+@media(max-width:768px){
+  .sumario{grid-template-columns:repeat(2,1fr);}
+  .hero-inner{grid-template-columns:1fr;}
+  .hero-right{display:none;}
+  .forn-grid{grid-template-columns:1fr;}
+  .header-nav{display:none;}
+}
+
+/* ── TELA DE LOGIN ── */
+#login-screen {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #2a2f7a 0%, #393E9C 55%, #4a51c4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  font-family: 'Rajdhani', sans-serif;
+}
+#login-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 65% 40%, rgba(105,186,239,.2) 0%, transparent 60%);
+}
+.login-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 40px 44px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 24px 60px rgba(13,27,62,.45);
+  position: relative;
+  z-index: 1;
+}
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  justify-content: center;
+}
+.login-brand {
+  font-size: 22px;
+  font-weight: 700;
+  color: #393E9C;
+  letter-spacing: .06em;
+}
+.login-brand sup { color: #69BAEF; font-size: 12px; }
+.login-slogan {
+  font-size: 10px;
+  color: #6B7BAE;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 28px;
+}
+.login-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #393E9C;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.login-field {
+  margin-bottom: 16px;
+}
+.login-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #6B7BAE;
+  margin-bottom: 6px;
+}
+.login-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #D6E0F0;
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #0D1B3E;
+  outline: none;
+  transition: border-color .15s;
+  letter-spacing: .08em;
+}
+.login-input:focus { border-color: #393E9C; }
+.login-input.error { border-color: #C0392B; background: #FDECEA; }
+.login-error {
+  display: none;
+  background: #FDECEA;
+  border: 1.5px solid #e8a0a0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #C0392B;
+  margin-bottom: 14px;
+  text-align: center;
+  letter-spacing: .03em;
+}
+.login-error.show { display: block; }
+.login-btn {
+  width: 100%;
+  padding: 13px;
+  background: #393E9C;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .15s;
+  margin-top: 4px;
+}
+.login-btn:hover { background: #4a51c4; }
+.login-btn:active { transform: scale(.98); }
+.login-footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 10px;
+  color: #8A96B0;
+  letter-spacing: .08em;
+}
+.login-attempts {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 10px;
+  color: #B07800;
+  font-family: 'DM Mono', monospace;
+  display: none;
+}
+.login-locked {
+  text-align: center;
+  padding: 20px 0;
+}
+.login-locked-icon { font-size: 40px; margin-bottom: 12px; }
+.login-locked-text { font-size: 14px; font-weight: 700; color: #C0392B; margin-bottom: 6px; }
+.login-locked-sub { font-size: 12px; color: #6B7BAE; }
+.login-countdown { font-size: 20px; font-weight: 700; color: #393E9C; font-family: 'DM Mono', monospace; margin-top: 10px; }
+
+</style>
+</head>
+<body>
+
+
+<!-- login-screen (2ª senha SRVGas2025@) removido — acesso somente pelo overlay 1234 -->
+
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">
+    <svg width="28" height="34" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="fg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#69BAEF"/><stop offset="100%" style="stop-color:#393E9C"/>
+      </linearGradient></defs>
+      <path d="M50 5C50 5,80 30,80 60C80 85,65 105,50 115C35 105,20 85,20 60C20 30,50 5,50 5Z" fill="url(#fg)" opacity=".9"/>
+      <path d="M50 15C50 15,25 38,28 65C30 80,38 95,50 108C38 95,25 75,30 55C35 38,50 15,50 15Z" fill="#69BAEF" opacity=".7"/>
+      <path d="M50 15C50 15,72 40,70 65C68 80,60 95,50 108C60 95,74 78,70 58C66 40,50 15,50 15Z" fill="#393E9C" opacity=".6"/>
+    </svg>
+    <div>
+      <div class="logo-text">SRV GÁS<sup>®</sup></div>
+      <div class="logo-slogan">Soluções para Instalações</div>
+    </div>
+  </div>
+  <div class="header-nav">
+    <a class="nav-hub" href="HUB.html">← HUB</a>
+    <div class="h-tab active" onclick="switchView('executivo',this)">Visão Geral</div>
+    <div class="h-tab" onclick="switchView('dashboard',this)">Dashboard</div>
+    <div class="h-tab" onclick="switchView('tabela',this)">Lista Completa</div>
+  </div>
+  <div class="header-date" id="hdate"></div>
+</div>
+
+
+<!-- BARRA DE PERSISTÊNCIA -->
+<div class="persist-bar" id="persist-bar">
+  <div class="persist-dot"></div>
+  <span id="persist-msg">Aguardando conexão com arquivo SharePoint...</span>
+  <button class="persist-reset" id="btn-reconectar" onclick="reconectarArquivo()" style="display:none" title="Reconectar ao arquivo detectado">⟳ Reconectar</button>
+  <button class="persist-reset" onclick="resetarDados()" title="Voltar para os dados originais da base">↺ Restaurar Base Original</button>
+</div>
+
+<!-- ═══════════════════════════════════════ VIEW: EXECUTIVO ═══ -->
+<div class="view active" id="view-executivo">
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="hero-tag">Painel de Provisão · 3º Trimestre 2025</div>
+        <div class="hero-title">Central de Gestão<br>de <em>Estoque SRV GÁS</em></div>
+        <div class="hero-sub">Base Dez/2025 – Mar/2026 · 369 SKUs · 21 fornecedores · Período de referência: 120 dias</div>
+        <div class="hero-kpis">
+          <div class="kpi"><div class="kpi-val red">30</div><div class="kpi-label">Urgentes</div></div>
+          <div class="kpi"><div class="kpi-val yellow">39</div><div class="kpi-label">Atenção</div></div>
+          <div class="kpi"><div class="kpi-val green">147</div><div class="kpi-label">OK</div></div>
+          <div class="kpi"><div class="kpi-val" style="color:rgba(255,255,255,.6)">153</div><div class="kpi-label">Sem Mov.</div></div>
+          <div class="kpi"><div class="kpi-val" style="color:var(--secondary)">10</div><div class="kpi-label">Forn. Alerta</div></div>
+        </div>
+      </div>
+      <div class="hero-right">
+        <button class="hero-btn danger" onclick="switchView('dashboard',document.querySelectorAll('.h-tab')[1])">
+          🔴 Ver 30 Urgentes
+        </button>
+        <button class="hero-btn primary" onclick="exportarCSVPorFornecedor()">
+          ↓ Exportar Lista de Compra
+        </button>
+        <button class="hero-btn outline" onclick="switchView('tabela',document.querySelectorAll('.h-tab')[2])">
+          ☰ Lista Completa
+        </button>
+        <button class="hero-btn outline" onclick="alert('Os saldos (Estoque 1 / Expedição 2) são atualizados automaticamente do Bling.\n\nAtualizar agora: rode  _estoquista\\ATUALIZAR.bat  e recarregue (F5).\nAtualização automática todo dia às 03h.')" title="Como atualizar os saldos do Bling">
+          🔄 Atualizar do Bling
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SITUAÇÃO POR FORNECEDOR -->
+  <div style="max-width:1100px;margin:0 auto;padding:24px 28px 48px;">
+
+    <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;margin-bottom:16px;">Situação por Fornecedor — Período Dez/2025 a Mar/2026</div>
+
+    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:24px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--primary);">
+            <th style="padding:10px 14px;color:rgba(255,255,255,.85);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-align:left;">Fornecedor</th>
+            <th style="padding:10px 14px;color:rgba(255,255,255,.85);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-align:center;">Urgente</th>
+            <th style="padding:10px 14px;color:rgba(255,255,255,.85);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-align:center;">Atenção</th>
+            <th style="padding:10px 14px;color:rgba(255,255,255,.85);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-align:center;">OK</th>
+            <th style="padding:10px 14px;color:rgba(255,255,255,.85);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-align:right;">Compra 30d (un)</th>
+            <th style="padding:10px 14px;color:rgba(255,255,255,.85);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-align:center;">Prioridade</th>
+          </tr>
+        </thead>
+        <tbody id="forn-table-exec"></tbody>
+      </table>
+    </div>
+
+    <!-- TOP URGENTES -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--red);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px;">🔴 Top 15 Urgentes — Pedir Hoje</div>
+        <div id="exec-urgentes" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--yellow);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px;">🟡 Top 15 Atenção — Pedir Esta Semana</div>
+        <div id="exec-atencao" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ VIEW: DASHBOARD ═══ -->
+<div class="view" id="view-dashboard">
+  <div class="sumario">
+    <div class="sum-card s-red"><div class="sum-label">Urgentes</div><div class="sum-val red" id="d-su">—</div><div class="sum-sub">&lt; 15 dias</div></div>
+    <div class="sum-card s-yellow"><div class="sum-label">Atenção</div><div class="sum-val yellow" id="d-sa">—</div><div class="sum-sub">15 – 44 dias</div></div>
+    <div class="sum-card s-green"><div class="sum-label">OK</div><div class="sum-val green" id="d-so">—</div><div class="sum-sub">&gt; 44 dias</div></div>
+    <div class="sum-card s-blue"><div class="sum-label">Forn. com Alerta</div><div class="sum-val blue" id="d-sf">—</div><div class="sum-sub">Urgente ou Atenção</div></div>
+  </div>
+  <div class="dash-wrap">
+    <div class="dash-bar">
+      <span class="fl">Exibir:</span>
+      <span class="chip urgente active" data-df="urgente" onclick="toggleDF(this)">● Urgente</span>
+      <span class="chip atencao active" data-df="atencao" onclick="toggleDF(this)">● Atenção</span>
+      <span class="chip ok" data-df="ok" onclick="toggleDF(this)">● OK</span>
+      <div class="sep"></div>
+      <span class="fl">Provisão:</span>
+      <select class="prazo-sel" id="dash-prazo" onchange="renderDash()">
+        <option value="30">30 dias</option>
+        <option value="60">60 dias</option>
+        <option value="90">90 dias</option>
+        <option value="120">120 dias</option>
+      </select>
+      <button class="exp-btn" onclick="exportarCSVPorFornecedor()">↓ Exportar Lista de Compra</button>
+    </div>
+    <div class="forn-grid" id="forn-grid"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ VIEW: TABELA ═══════ -->
+<div class="view" id="view-tabela">
+  <div class="toolbar">
+    <button class="upload-btn" onclick="document.getElementById('fe1').click()">▲ Estoque 1</button>
+    <span class="upload-status ok" id="st-e1">✓ Loja carregada</span>
+    <div class="sep"></div>
+    <button class="upload-btn" onclick="document.getElementById('fe2').click()">▲ Estoque 2</button>
+    <span class="upload-status ok" id="st-e2">✓ Expedição carregada</span>
+    <div class="sep"></div>
+    <button class="upload-btn" onclick="document.getElementById('fs').click()">▲ Saídas</button>
+    <span class="upload-status ok" id="st-s">✓ Saídas Dez/25–Mar/26</span>
+    <div class="sep"></div>
+    <button class="upload-btn" onclick="document.getElementById('fb').click()">↺ Base</button>
+    <span class="upload-status ok" id="st-b">369 SKUs · 3T 2025</span>
+    <input type="file" id="fe1" accept=".csv" onchange="uploadEst(this,1)">
+    <input type="file" id="fe2" accept=".csv" onchange="uploadEst(this,2)">
+    <input type="file" id="fs" accept=".csv" onchange="uploadSai(this)">
+    <input type="file" id="fb" accept=".csv" onchange="importBase(this)">
+    <div class="sep"></div>
+    <button class="upload-btn sec" onclick="toggleGuia()">? Formato</button>
+    <button class="upload-btn exp" onclick="exportarCSVPorFornecedor()">↓ Exportar</button>
+    <input type="text" class="search-box" id="search" placeholder="Buscar produto, SKU, fornecedor..." oninput="renderTable()">
+  </div>
+
+  <div class="guia" id="guia">
+    <strong style="font-family:Rajdhani,sans-serif;font-size:13px;">FORMATO CSV DO BLING</strong>
+    &nbsp;·&nbsp; Separador: <strong>ponto-e-vírgula</strong> &nbsp;·&nbsp; Números: <strong>vírgula decimal, ponto de milhar</strong><br>
+    <strong>Estoque:</strong> "Código";"GTIN/EAN";"Produto";"Unidade";"Quantidade" — relatório <em>Saldos em Estoque</em> (selecionar depósito)<br>
+    <strong>Saídas:</strong> "Código";"Produto";"Saldo antes";"Entradas";"Valor Entr.";"Saídas";"Valor Saídas";"Saldo final" — relatório <em>Entradas e Saídas</em> (4 meses)
+  </div>
+
+  <div class="filtros">
+    <span class="fl">Status:</span>
+    <span class="chip urgente active" data-filter="urgente" onclick="toggleFilter(this)">● Urgente</span>
+    <span class="chip atencao active" data-filter="atencao" onclick="toggleFilter(this)">● Atenção</span>
+    <span class="chip ok" data-filter="ok" onclick="toggleFilter(this)">● OK</span>
+    <span class="chip" data-filter="inativo" onclick="toggleFilter(this)">○ Sem Mov.</span>
+    <div class="sep"></div>
+    <span class="fl">Fornecedor:</span>
+    <select class="fornec-sel" id="fsel" onchange="renderTable()"><option value="">Todos</option></select>
+  </div>
+
+  <div class="sumario">
+    <div class="sum-card s-red"><div class="sum-label">Urgentes</div><div class="sum-val red" id="su">—</div><div class="sum-sub">&lt; 15 dias</div></div>
+    <div class="sum-card s-yellow"><div class="sum-label">Atenção</div><div class="sum-val yellow" id="sa">—</div><div class="sum-sub">15–44 dias</div></div>
+    <div class="sum-card s-green"><div class="sum-label">OK</div><div class="sum-val green" id="so">—</div><div class="sum-sub">&gt; 44 dias</div></div>
+    <div class="sum-card s-blue"><div class="sum-label">Forn. Urgentes</div><div class="sum-val blue" id="sf">—</div><div class="sum-sub">Com urgente</div></div>
+  </div>
+
+  <div class="prov-tabs">
+    <div class="prov-tab active" onclick="setPrazo(30,this)">30 dias</div>
+    <div class="prov-tab" onclick="setPrazo(60,this)">60 dias</div>
+    <div class="prov-tab" onclick="setPrazo(90,this)">90 dias</div>
+    <div class="prov-tab" onclick="setPrazo(120,this)">120 dias</div>
+  </div>
+  <div class="action-bar">
+    <button class="act-btn" onclick="soUrgentes()">Só Urgentes+Atenção</button>
+    <button class="act-btn" onclick="agrupar()">Agrupar por Fornecedor</button>
+    <button class="act-btn" onclick="resetF()">Limpar Filtros</button>
+  </div>
+
+  <div class="table-wrap">
+    <table id="main-table">
+      <thead><tr>
+        <th onclick="sortBy('fornecedor')">Fornecedor</th>
+        <th onclick="sortBy('produto')">Produto</th>
+        <th onclick="sortBy('sku')">SKU</th>
+        <th class="nr" onclick="sortBy('estoque_loja')">Loja</th>
+        <th class="nr" onclick="sortBy('estoque_exp')">Exp.</th>
+        <th class="nr" onclick="sortBy('estoque_total')">Total</th>
+        <th class="nr" onclick="sortBy('saidas_4m')">Saídas 4M</th>
+        <th onclick="sortBy('duracao')">Duração</th>
+        <th class="nr" id="col-compra" onclick="sortBy('compra')">Compra 30d</th>
+        <th onclick="sortBy('status')">Status</th>
+        <th style="width:28px;"></th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="empty" class="empty" style="display:none"><strong>Nenhum produto encontrado</strong>Ajuste os filtros ou busca.</div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-ov" id="modal">
+  <div class="modal-box">
+    <div class="modal-title">Confirmar Atualização de Base</div>
+    <div class="modal-sub">Estoque e saídas dos SKUs existentes serão preservados.</div>
+    <div class="modal-stats" id="mstats"></div>
+    <div class="modal-actions">
+      <button class="mbtn cancel" onclick="closeModal()">Cancelar</button>
+      <button class="mbtn ok" onclick="confirmBase()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DADOS ────────────────────────────────────────────────────────────────────
+const BASE_DATA = [{"sku":"KO16DECORBK","fornecedor":"KOMECO","produto":"Aquecedor Aut Ko 16BK Decor 1PFGN4","un":"UN","estoque_loja":1.0,"estoque_exp":0,"estoque_total":1.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"KO16D","fornecedor":"KOMECO","produto":"Aquecedor Aut Ko 16D Prime 1BFGN1","un":"UN","estoque_loja":7.0,"estoque_exp":0,"estoque_total":7.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":840.0},{"sku":"KO21D","fornecedor":"KOMECO","produto":"Aquecedor Aut Ko 21D Prime 1BFGN1","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":2.0,"media_30":0.5,"media_60":1.0,"media_90":1.5,"media_120":2.0,"duracao":0.0},{"sku":"KO16DI","fornecedor":"KOMECO","produto":"Aquecedor Aut Ko 16Di Prime 1BFGN1","un":"UN","estoque_loja":2.0,"estoque_exp":0,"estoque_total":2.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"KO21DI","fornecedor":"KOMECO","produto":"Aquecedor Aut Ko 21Di Prime 1BFGN1","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO21DECORBK","fornecedor":"KOMECO","produto":"Aquecedor Aut Ko 21BK Decor 1PFGN4","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO26D","fornecedor":"KOMECO","produto":"AQUEC AUT KO 26D PRIME WIFI 1BFGN1","un":"UN","estoque_loja":0.0,"estoque_exp":1.0,"estoque_total":1.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"KO33D","fornecedor":"KOMECO","produto":"AQUEC AUT KO 33D PRIME WIFI 1BFGN1","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO38D","fornecedor":"KOMECO","produto":"AQUEC AUT KO 38D PRIME WIFI 1BFGN1","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO46D","fornecedor":"KOMECO","produto":"AQUEC AUT KO 46D PRIME WIFI 1BFGN1","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KOWIFI","fornecedor":"KOMECO","produto":"Modulo Wifi para aquecedor Ko","un":"UN","estoque_loja":3.0,"estoque_exp":0,"estoque_total":3.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"55","fornecedor":"W.I","produto":"Abraçadeira 3/8","un":"UN","estoque_loja":2200.0,"estoque_exp":0,"estoque_total":2200.0,"saidas_4m":1185.0,"media_30":296.25,"media_60":592.5,"media_90":888.75,"media_120":1185.0,"duracao":222.8},{"sku":"PX23","fornecedor":"EMMETI","produto":"Abraçadeira para tubo 16mm","un":"UN","estoque_loja":1.0,"estoque_exp":24.0,"estoque_total":25.0,"saidas_4m":64.0,"media_30":16.0,"media_60":32.0,"media_90":48.0,"media_120":64.0,"duracao":46.9},{"sku":"PX24","fornecedor":"EMMETI","produto":"Abraçadeira para tubo 20mm Emmeti","un":"UN","estoque_loja":497.0,"estoque_exp":100.0,"estoque_total":597.0,"saidas_4m":3.0,"media_30":0.75,"media_60":1.5,"media_90":2.25,"media_120":3.0,"duracao":23880.0},{"sku":"131","fornecedor":"PROGERAL","produto":"Abraçadeira para tubo de exaustão 100mm","un":"UN","estoque_loja":0.0,"estoque_exp":31.0,"estoque_total":31.0,"saidas_4m":133.0,"media_30":33.25,"media_60":66.5,"media_90":99.75,"media_120":133.0,"duracao":28.0},{"sku":"138","fornecedor":"PROGERAL","produto":"Abraçadeira para tubo de exaustão 125mm","un":"UN","estoque_loja":0.0,"estoque_exp":1.0,"estoque_total":1.0,"saidas_4m":7.0,"media_30":1.75,"media_60":3.5,"media_90":5.25,"media_120":7.0,"duracao":17.1},{"sku":"56","fornecedor":"PROGERAL","produto":"Abraçadeira para tubo de exaustão 60mm","un":"UN","estoque_loja":115.0,"estoque_exp":28.0,"estoque_total":143.0,"saidas_4m":438.0,"media_30":109.5,"media_60":219.0,"media_90":328.5,"media_120":438.0,"duracao":39.2},{"sku":"130","fornecedor":"PROGERAL","produto":"Abraçadeira para tubo de exaustão 80mm","un":"UN","estoque_loja":105.0,"estoque_exp":32.0,"estoque_total":137.0,"saidas_4m":238.0,"media_30":59.5,"media_60":119.0,"media_90":178.5,"media_120":238.0,"duracao":69.1},{"sku":"23","fornecedor":"JP FLEX","produto":"Adaptador dako angular 1/2 Fêmea x BM (bico espigão)","un":"UN","estoque_loja":0.0,"estoque_exp":18.0,"estoque_total":18.0,"saidas_4m":43.0,"media_30":10.75,"media_60":21.5,"media_90":32.25,"media_120":43.0,"duracao":50.2},{"sku":"22","fornecedor":"JP FLEX","produto":"Adaptador dako reto 1/2 Fêmea x BM (bico espigão)","un":"UN","estoque_loja":96.0,"estoque_exp":24.0,"estoque_total":120.0,"saidas_4m":713.0,"media_30":178.25,"media_60":356.5,"media_90":534.75,"media_120":713.0,"duracao":20.2},{"sku":"24","fornecedor":"JP FLEX","produto":"Adaptador dako reto 1/2 Macho x BM (bico espigão)","un":"UN","estoque_loja":0.0,"estoque_exp":6.0,"estoque_total":6.0,"saidas_4m":181.0,"media_30":45.25,"media_60":90.5,"media_90":135.75,"media_120":181.0,"duracao":4.0},{"sku":"333","fornecedor":"CRISTAL","produto":"Adesivo selante silicone bisnaga Brascoved 50g","un":"UN","estoque_loja":24.0,"estoque_exp":10.0,"estoque_total":34.0,"saidas_4m":20.0,"media_30":5.0,"media_60":10.0,"media_90":15.0,"media_120":20.0,"duracao":204.0},{"sku":"97","fornecedor":"W.I","produto":"Agulha mecânica para bicos injetores de fogão/cooktop","un":"UN","estoque_loja":0.0,"estoque_exp":40.0,"estoque_total":40.0,"saidas_4m":155.0,"media_30":38.75,"media_60":77.5,"media_90":116.25,"media_120":155.0,"duracao":31.0},{"sku":"PX87","fornecedor":"EMMETI","produto":"Alicate de prensa Mini 16/20mm Emmeti","un":"UN","estoque_loja":1.0,"estoque_exp":0,"estoque_total":1.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"PX85","fornecedor":"EMMETI","produto":"Alicate de prensar 16 a 32mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":2.0,"media_30":0.5,"media_60":1.0,"media_90":1.5,"media_120":2.0,"duracao":0.0},{"sku":"207","fornecedor":"CLIMATIZAR","produto":"Aquecedor De Água a Gás Rinnai 7,5L REU-M07","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"134","fornecedor":"ISOFORT","produto":"Aro de acabamento para aquecedores 100mm longo","un":"UN","estoque_loja":30.0,"estoque_exp":44.0,"estoque_total":74.0,"saidas_4m":99.0,"media_30":24.75,"media_60":49.5,"media_90":74.25,"media_120":99.0,"duracao":89.7},{"sku":"132","fornecedor":"ISOFORT","produto":"Aro de acabamento para aquecedores 60mm longo","un":"UN","estoque_loja":155.0,"estoque_exp":60.0,"estoque_total":215.0,"saidas_4m":488.0,"media_30":122.0,"media_60":244.0,"media_90":366.0,"media_120":488.0,"duracao":52.9},{"sku":"133","fornecedor":"ISOFORT","produto":"Aro de acabamento para aquecedores 80mm longo","un":"UN","estoque_loja":68.0,"estoque_exp":65.0,"estoque_total":133.0,"saidas_4m":347.0,"media_30":86.75,"media_60":173.5,"media_90":260.25,"media_120":347.0,"duracao":46.0},{"sku":"54","fornecedor":"JP FLEX","produto":"Borboleta Zamac P13 5/8 UNC x 1/8 NPT","un":"UN","estoque_loja":0.0,"estoque_exp":70.0,"estoque_total":70.0,"saidas_4m":848.0,"media_30":212.0,"media_60":424.0,"media_90":636.0,"media_120":848.0,"duracao":9.9},{"sku":"42","fornecedor":"W.I","produto":"Borracha de silicone p/ panela de pressão 10L","un":"UN","estoque_loja":44.0,"estoque_exp":15.0,"estoque_total":59.0,"saidas_4m":132.0,"media_30":33.0,"media_60":66.0,"media_90":99.0,"media_120":132.0,"duracao":53.6},{"sku":"155","fornecedor":"HIDROGAS","produto":"Botão Plástico Baquelite P/ Chapeiras E Fornos","un":"UN","estoque_loja":0.0,"estoque_exp":4.0,"estoque_total":4.0,"saidas_4m":8.0,"media_30":2.0,"media_60":4.0,"media_90":6.0,"media_120":8.0,"duracao":60.0},{"sku":"233","fornecedor":"CENTRO","produto":"Broca aço rápido 0,90mm","un":"UN","estoque_loja":0.0,"estoque_exp":13.0,"estoque_total":13.0,"saidas_4m":2.0,"media_30":0.5,"media_60":1.0,"media_90":1.5,"media_120":2.0,"duracao":780.0},{"sku":"199","fornecedor":"CENTRO","produto":"Broca aço rápido 0,95mm","un":"UN","estoque_loja":0.0,"estoque_exp":7.0,"estoque_total":7.0,"saidas_4m":8.0,"media_30":2.0,"media_60":4.0,"media_90":6.0,"media_120":8.0,"duracao":105.0},{"sku":"234","fornecedor":"CENTRO","produto":"Broca aço rápido 1,00mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"200","fornecedor":"CENTRO","produto":"Broca aço rápido 1,10mm","un":"UN","estoque_loja":10.0,"estoque_exp":0,"estoque_total":10.0,"saidas_4m":9.0,"media_30":2.25,"media_60":4.5,"media_90":6.75,"media_120":9.0,"duracao":133.3},{"sku":"201","fornecedor":"CENTRO","produto":"Broca aço rápido 1,35mm","un":"UN","estoque_loja":0.0,"estoque_exp":3.0,"estoque_total":3.0,"saidas_4m":17.0,"media_30":4.25,"media_60":8.5,"media_90":12.75,"media_120":17.0,"duracao":21.2},{"sku":"206","fornecedor":"HIDROGAS","produto":"Bucha de redução 1/2 NPT x 3/8 NPT F","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"126","fornecedor":"HIDROGAS","produto":"Bucha de redução 1/2F x 1\"M latão","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"30","fornecedor":"JP FLEX","produto":"Bucha de redução 1/8F x 1/2M latão","un":"UN","estoque_loja":42.0,"estoque_exp":24.0,"estoque_total":66.0,"saidas_4m":336.0,"media_30":84.0,"media_60":168.0,"media_90":252.0,"media_120":336.0,"duracao":23.6},{"sku":"135","fornecedor":"JP FLEX","produto":"Bucha de redução 3/4M x 1/2F latão","un":"UN","estoque_loja":0.0,"estoque_exp":8.0,"estoque_total":8.0,"saidas_4m":163.0,"media_30":40.75,"media_60":81.5,"media_90":122.25,"media_120":163.0,"duracao":5.9},{"sku":"184","fornecedor":"JP FLEX","produto":"Bucha de redução invertida 3/4F x 1/2M latão","un":"UN","estoque_loja":20.0,"estoque_exp":1.0,"estoque_total":21.0,"saidas_4m":80.0,"media_30":20.0,"media_60":40.0,"media_90":60.0,"media_120":80.0,"duracao":31.5},{"sku":"197","fornecedor":"JP FLEX","produto":"Bucha redução 1/2 NPT M X 1/4 NPT F","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX86","fornecedor":"EMMETI","produto":"CALIBRADOR 16/20/26 MM TRIPLO","un":"UN","estoque_loja":8.0,"estoque_exp":2.0,"estoque_total":10.0,"saidas_4m":0.0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0.0,"duracao":9999},{"sku":"220","fornecedor":"HAEKE","produto":"Canopla cromada hexagonal p/ flexível água 3/4","un":"UN","estoque_loja":3.0,"estoque_exp":0,"estoque_total":3.0,"saidas_4m":0.0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0.0,"duracao":9999},{"sku":"52","fornecedor":"CHAMIX","produto":"Canopla de acabamento para flexíveis","un":"UN","estoque_loja":770.0,"estoque_exp":28.0,"estoque_total":798.0,"saidas_4m":977.0,"media_30":244.25,"media_60":488.5,"media_90":732.75,"media_120":977.0,"duracao":98.0},{"sku":"115","fornecedor":"CHAMIX","produto":"Canopla hexagonal de acabamento para flexíveis e torneiras","un":"UN","estoque_loja":19.0,"estoque_exp":16.0,"estoque_total":35.0,"saidas_4m":553.0,"media_30":138.25,"media_60":276.5,"media_90":414.75,"media_120":553.0,"duracao":7.6},{"sku":"CB06","fornecedor":"HIDROGAS","produto":"Cap tampão bronze 15mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB07","fornecedor":"HIDROGAS","produto":"Cap tampão bronze 22mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"44","fornecedor":"HIDROGAS","produto":"Caulim zincado","un":"UN","estoque_loja":0.0,"estoque_exp":150.0,"estoque_total":150.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"106","fornecedor":"SAMAFER","produto":"Chave canhão 7x125mm Para Ajuste de bicos injetores fogão","un":"UN","estoque_loja":4200.0,"estoque_exp":57.0,"estoque_total":4257.0,"saidas_4m":282.0,"media_30":70.5,"media_60":141.0,"media_90":211.5,"media_120":282.0,"duracao":1811.5},{"sku":"19","fornecedor":"META","produto":"Coletor de gás 23cm 1/2 pol.","un":"UN","estoque_loja":100.0,"estoque_exp":26.0,"estoque_total":126.0,"saidas_4m":254.0,"media_30":63.5,"media_60":127.0,"media_90":190.5,"media_120":254.0,"duracao":59.5},{"sku":"CB05","fornecedor":"HIDROGAS","produto":"Conector bronze SxRF 15mm x 1/2\"","un":"UN","estoque_loja":0.0,"estoque_exp":5.0,"estoque_total":5.0,"saidas_4m":0.0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0.0,"duracao":9999},{"sku":"CB04","fornecedor":"HIDROGAS","produto":"Conector bronze SxRM 15mm x 1/2\"","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB08","fornecedor":"HIDROGAS","produto":"Conector Cobre F 3/4 x 22","un":"UN","estoque_loja":0.0,"estoque_exp":5.0,"estoque_total":5.0,"saidas_4m":0.0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0.0,"duracao":9999},{"sku":"CB09","fornecedor":"HIDROGAS","produto":"Conector Cobre M 3/4 x 22","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX62","fornecedor":"EMMETI","produto":"Conector Fêmea 1\"x26mmGaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX73","fornecedor":"EMMETI","produto":"Conector fêmea 1\"x32mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX01","fornecedor":"EMMETI","produto":"Conector fêmea 1/2\"x16mm Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":7.0,"estoque_total":7.0,"saidas_4m":5.0,"media_30":1.25,"media_60":2.5,"media_90":3.75,"media_120":5.0,"duracao":168.0},{"sku":"PX10","fornecedor":"EMMETI","produto":"Conector fêmea 1/2\"x20mm Gaspex","un":"UN","estoque_loja":20.0,"estoque_exp":8.0,"estoque_total":28.0,"saidas_4m":4.0,"media_30":1.0,"media_60":2.0,"media_90":3.0,"media_120":4.0,"duracao":840.0},{"sku":"PX61","fornecedor":"EMMETI","produto":"Conector Fêmea 3/4x26mm Gaspex Emmeti","un":"UN","estoque_loja":10.0,"estoque_exp":0,"estoque_total":10.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"PX21","fornecedor":"EMMETI","produto":"Conector fêmea móvel 1/2\"x16mm Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":25.0,"estoque_total":25.0,"saidas_4m":11.0,"media_30":2.75,"media_60":5.5,"media_90":8.25,"media_120":11.0,"duracao":272.7},{"sku":"PX22","fornecedor":"EMMETI","produto":"Conector fêmea móvel 1/2\"x20mm Emmeti","un":"UN","estoque_loja":10.0,"estoque_exp":2.0,"estoque_total":12.0,"saidas_4m":2.0,"media_30":0.5,"media_60":1.0,"media_90":1.5,"media_120":2.0,"duracao":720.0},{"sku":"PX60","fornecedor":"EMMETI","produto":"Conector macho 1\"x26mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX72","fornecedor":"EMMETI","produto":"Conector macho 1\"x32mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX02","fornecedor":"EMMETI","produto":"Conector macho 1/2\"x16mm Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":9.0,"estoque_total":9.0,"saidas_4m":6.0,"media_30":1.5,"media_60":3.0,"media_90":4.5,"media_120":6.0,"duracao":180.0},{"sku":"PX11","fornecedor":"EMMETI","produto":"Conector macho 1/2\"x20mm Emmeti","un":"UN","estoque_loja":20.0,"estoque_exp":0,"estoque_total":20.0,"saidas_4m":27.0,"media_30":6.75,"media_60":13.5,"media_90":20.25,"media_120":27.0,"duracao":88.9},{"sku":"PX48","fornecedor":"EMMETI","produto":"Conector macho 3/4x20mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX59","fornecedor":"EMMETI","produto":"Conector macho 3/4x26mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"124","fornecedor":"HIDROGAS","produto":"CONJUNTO P13 ZAMAC MONTADO BORBOLETA 5/16BM","un":"UN","estoque_loja":0.0,"estoque_exp":7.0,"estoque_total":7.0,"saidas_4m":0.0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0.0,"duracao":9999},{"sku":"51","fornecedor":"JP FLEX","produto":"Cotovelo 1/2F x 1/2F latão","un":"UN","estoque_loja":50.0,"estoque_exp":30.0,"estoque_total":80.0,"saidas_4m":461.0,"media_30":115.25,"media_60":230.5,"media_90":345.75,"media_120":461.0,"duracao":20.8},{"sku":"31","fornecedor":"JP FLEX","produto":"Cotovelo 1/2M x 1/2F latão","un":"UN","estoque_loja":100.0,"estoque_exp":53.0,"estoque_total":153.0,"saidas_4m":10.0,"media_30":2.5,"media_60":5.0,"media_90":7.5,"media_120":10.0,"duracao":1836.0},{"sku":"219","fornecedor":"HIDROGAS","produto":"Cotovelo 1/8M NPT x 1/8F NPT latão","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX05","fornecedor":"EMMETI","produto":"Cotovelo 16x16mm Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":35.0,"estoque_total":35.0,"saidas_4m":10.0,"media_30":2.5,"media_60":5.0,"media_90":7.5,"media_120":10.0,"duracao":420.0},{"sku":"PX14","fornecedor":"EMMETI","produto":"Cotovelo 20x20mm Emmeti Conexão Prensar Multi Gás Tubulação","un":"UN","estoque_loja":0.0,"estoque_exp":12.0,"estoque_total":12.0,"saidas_4m":37.0,"media_30":9.25,"media_60":18.5,"media_90":27.75,"media_120":37.0,"duracao":38.9},{"sku":"PX53","fornecedor":"EMMETI","produto":"Cotovelo 26x26mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":6.0,"estoque_total":6.0,"saidas_4m":4.0,"media_30":1.0,"media_60":2.0,"media_90":3.0,"media_120":4.0,"duracao":180.0},{"sku":"PX67","fornecedor":"EMMETI","produto":"Cotovelo 32x32mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB16","fornecedor":"HIDROGAS","produto":"Cotovelo 90 cobre SxS 28mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB01","fornecedor":"HIDROGAS","produto":"Cotovelo 90º bronze SxRF 15mm x 1/2\"","un":"UN","estoque_loja":0.0,"estoque_exp":5.0,"estoque_total":5.0,"saidas_4m":0.0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0.0,"duracao":9999},{"sku":"CB02","fornecedor":"HIDROGAS","produto":"Cotovelo 90º bronze SxRM 15mm x 1/2\"","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB03","fornecedor":"HIDROGAS","produto":"Cotovelo 90º bronze SxS 15mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB12","fornecedor":"HIDROGAS","produto":"Cotovelo cobre SxS 22mm","un":"UN","estoque_loja":0.0,"estoque_exp":5.0,"estoque_total":5.0,"saidas_4m":0.0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0.0,"duracao":9999},{"sku":"PX51","fornecedor":"EMMETI","produto":"Cotovelo Fêmea 1\"x26mm Gaspex Emmeti","un":"UN","estoque_loja":10.0,"estoque_exp":0,"estoque_total":10.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"PX65","fornecedor":"EMMETI","produto":"Cotovelo Fêmea 1\"x32mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX03","fornecedor":"EMMETI","produto":"Cotovelo fêmea 1/2\"x16mm Emmeti Gaspex","un":"UN","estoque_loja":10.0,"estoque_exp":8.0,"estoque_total":18.0,"saidas_4m":19.0,"media_30":4.75,"media_60":9.5,"media_90":14.25,"media_120":19.0,"duracao":113.7},{"sku":"PX12","fornecedor":"EMMETI","produto":"Cotovelo fêmea 1/2\"x20mm Gaspex","un":"UN","estoque_loja":0.0,"estoque_exp":17.0,"estoque_total":17.0,"saidas_4m":37.0,"media_30":9.25,"media_60":18.5,"media_90":27.75,"media_120":37.0,"duracao":55.1},{"sku":"PX49","fornecedor":"EMMETI","produto":"Cotovelo Fêmea 3/4x20mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX50","fornecedor":"EMMETI","produto":"Cotovelo Fêmea 3/4x26mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":5.0,"estoque_total":5.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"PX20","fornecedor":"EMMETI","produto":"Cotovelo fêmea c/ flange 1/2\"x16mm Emmeti","un":"UN","estoque_loja":10.0,"estoque_exp":12.0,"estoque_total":22.0,"saidas_4m":6.0,"media_30":1.5,"media_60":3.0,"media_90":4.5,"media_120":6.0,"duracao":440.0},{"sku":"PX19","fornecedor":"EMMETI","produto":"Cotovelo fêmea c/ flange 1/2\"x20mm Emmeti","un":"UN","estoque_loja":20.0,"estoque_exp":18.0,"estoque_total":38.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":4560.0},{"sku":"157","fornecedor":"HIDROGAS","produto":"Cotovelo Galvanizado F x F 1/2 Galvanizado","un":"UN","estoque_loja":15.0,"estoque_exp":2.0,"estoque_total":17.0,"saidas_4m":49.0,"media_30":12.25,"media_60":24.5,"media_90":36.75,"media_120":49.0,"duracao":41.6},{"sku":"CB15","fornecedor":"HIDROGAS","produto":"Cotovelo latão 1/2 F x 22mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"166","fornecedor":"HIDROGAS","produto":"Cotovelo latão M x F 1\"","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX66","fornecedor":"EMMETI","produto":"Cotovelo Macho 1\"x32mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX04","fornecedor":"EMMETI","produto":"Cotovelo macho 1/2\"x16mm Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX13","fornecedor":"EMMETI","produto":"Cotovelo macho 1/2\"x20mm Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX45","fornecedor":"EMMETI","produto":"Cotovelo Macho 3/4x20mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX52","fornecedor":"EMMETI","produto":"Cotovelo Macho 3/4x26mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"151","fornecedor":"HIDROGAS","produto":"Cruzeta 1/2 x 1/2 x 1/2 x 1/2 Tupy galvanizado","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"247","fornecedor":"CHAMIX","produto":"Ducha Chuveiro SRV Gás","un":"UN","estoque_loja":0.0,"estoque_exp":13.0,"estoque_total":13.0,"saidas_4m":27.0,"media_30":6.75,"media_60":13.5,"media_90":20.25,"media_120":27.0,"duracao":57.8},{"sku":"129","fornecedor":"CHAMIX","produto":"Duto de exaustão alumínio 100mm para aquecedor","un":"UN","estoque_loja":125.0,"estoque_exp":1.0,"estoque_total":126.0,"saidas_4m":199.0,"media_30":49.75,"media_60":99.5,"media_90":149.25,"media_120":199.0,"duracao":76.0},{"sku":"109","fornecedor":"CHAMIX","produto":"Duto de exaustão aluminio 120mm para aquecedor","un":"UN","estoque_loja":0,"estoque_exp":0,"estoque_total":0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"127","fornecedor":"CHAMIX","produto":"Duto de exaustão alumínio 60mm para aquecedor","un":"UN","estoque_loja":130.0,"estoque_exp":6.0,"estoque_total":136.0,"saidas_4m":1070.0,"media_30":267.5,"media_60":535.0,"media_90":802.5,"media_120":1070.0,"duracao":15.3},{"sku":"128","fornecedor":"CHAMIX","produto":"Duto de exaustão alumínio 80mm para aquecedor","un":"UN","estoque_loja":285.0,"estoque_exp":18.0,"estoque_total":303.0,"saidas_4m":814.0,"media_30":203.5,"media_60":407.0,"media_90":610.5,"media_120":814.0,"duracao":44.7},{"sku":"301","fornecedor":"CLIMATIZAR","produto":"E10 Aquecedor Rinnai 10 Litros","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"302","fornecedor":"CLIMATIZAR","produto":"E11 Aquecedor Rinnai 11 Litros (Pilha)","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"303","fornecedor":"CLIMATIZAR","produto":"E15 Aquecedor Rinnai 15 Litros","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"304","fornecedor":"CLIMATIZAR","produto":"E21 Aquecedor Rinnai 21 Litros","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"305","fornecedor":"CLIMATIZAR","produto":"E27 Aquecedor Rinnai 27 Litros","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"103","fornecedor":"EMMETI","produto":"Eliminadora de ar C/ ventosa plástica 1/2\" Emmeti","un":"UN","estoque_loja":24.0,"estoque_exp":6.0,"estoque_total":30.0,"saidas_4m":49.0,"media_30":12.25,"media_60":24.5,"media_90":36.75,"media_120":49.0,"duracao":73.5},{"sku":"SERV3","fornecedor":"EMMETI","produto":"Envelope preto G","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"4","fornecedor":"CLESSE","produto":"Estabilizador clesse expert 10kg CB52453","un":"UN","estoque_loja":0.0,"estoque_exp":1.0,"estoque_total":1.0,"saidas_4m":4.0,"media_30":1.0,"media_60":2.0,"media_90":3.0,"media_120":4.0,"duracao":30.0},{"sku":"45","fornecedor":"HIDROGAS","produto":"Estanho p/ solda 50x50mm 500g","un":"UN","estoque_loja":0.0,"estoque_exp":1.0,"estoque_total":1.0,"saidas_4m":36.0,"media_30":9.0,"media_60":18.0,"media_90":27.0,"media_120":36.0,"duracao":3.3},{"sku":"102","fornecedor":"EMMETI","produto":"Filtro Y com tela inox 1/2\" Emmeti Para encanamentos","un":"UN","estoque_loja":0.0,"estoque_exp":7.0,"estoque_total":7.0,"saidas_4m":9.0,"media_30":2.25,"media_60":4.5,"media_90":6.75,"media_120":9.0,"duracao":93.3},{"sku":"69","fornecedor":"HIDROGAS","produto":"Fio veda rosca Loctite 55 160m Henkel","un":"UN","estoque_loja":0,"estoque_exp":0,"estoque_total":0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"248","fornecedor":"CRISTAL","produto":"Fita adesiva dupla face espuma 19mm x 2mt","un":"UN","estoque_loja":18.0,"estoque_exp":7.0,"estoque_total":25.0,"saidas_4m":31.0,"media_30":7.75,"media_60":15.5,"media_90":23.25,"media_120":31.0,"duracao":96.8},{"sku":"48","fornecedor":"HIDROGAS","produto":"Fita veda rosca 18mm x 50m","un":"UN","estoque_loja":130.0,"estoque_exp":34.0,"estoque_total":164.0,"saidas_4m":159.0,"media_30":39.75,"media_60":79.5,"media_90":119.25,"media_120":159.0,"duracao":123.8},{"sku":"68","fornecedor":"EMMETI","produto":"Flexivel água malha de aço 30cm Emmeti","un":"UN","estoque_loja":600.0,"estoque_exp":46.0,"estoque_total":646.0,"saidas_4m":498.0,"media_30":124.5,"media_60":249.0,"media_90":373.5,"media_120":498.0,"duracao":155.7},{"sku":"67","fornecedor":"EMMETI","produto":"Flexivel água malha de aço 40cm Emmeti","un":"UN","estoque_loja":1570.0,"estoque_exp":26.0,"estoque_total":1596.0,"saidas_4m":928.0,"media_30":232.0,"media_60":464.0,"media_90":696.0,"media_120":928.0,"duracao":206.4},{"sku":"14","fornecedor":"HAEKE","produto":"Flexível de água40cm P/ Aquecedores de água a gás 1/2","un":"UN","estoque_loja":130.0,"estoque_exp":16.0,"estoque_total":146.0,"saidas_4m":263.0,"media_30":65.75,"media_60":131.5,"media_90":197.25,"media_120":263.0,"duracao":66.6},{"sku":"309","fornecedor":"JP FLEX","produto":"Flexível de Água 30cm 1/2x1/2 JPFlex P/ Aquecedores a Gás","un":"UN","estoque_loja":0.0,"estoque_exp":9.0,"estoque_total":9.0,"saidas_4m":15.0,"media_30":3.75,"media_60":7.5,"media_90":11.25,"media_120":15.0,"duracao":72.0},{"sku":"13","fornecedor":"HAEKE","produto":"Flexível de água 30cm P/ Aquecedores de água a gás 1/2","un":"UN","estoque_loja":90.0,"estoque_exp":21.0,"estoque_total":111.0,"saidas_4m":493.0,"media_30":123.25,"media_60":246.5,"media_90":369.75,"media_120":493.0,"duracao":27.0},{"sku":"216","fornecedor":"HAEKE","produto":"Flexível de água Haenke 40cm 3/4 x 3/4 MF Para Aquecedores","un":"UN","estoque_loja":0.0,"estoque_exp":12.0,"estoque_total":12.0,"saidas_4m":103.0,"media_30":25.75,"media_60":51.5,"media_90":77.25,"media_120":103.0,"duracao":14.0},{"sku":"215","fornecedor":"HAEKE","produto":"Flexível de água Haenke Para Aquecedores 30cm 3/4 x 3/4 MF","un":"UN","estoque_loja":0.0,"estoque_exp":16.0,"estoque_total":16.0,"saidas_4m":101.0,"media_30":25.25,"media_60":50.5,"media_90":75.75,"media_120":101.0,"duracao":19.0},{"sku":"105","fornecedor":"EMMETI","produto":"Flexivel de água malha de aço 60cm Emmeti","un":"UN","estoque_loja":110.0,"estoque_exp":22.0,"estoque_total":132.0,"saidas_4m":144.0,"media_30":36.0,"media_60":72.0,"media_90":108.0,"media_120":144.0,"duracao":110.0},{"sku":"172","fornecedor":"JP FLEX","produto":"Flexível de gás nitrílico 1,20m 1/2 MxF Fogão Forno Cooktop","un":"UN","estoque_loja":10.0,"estoque_exp":13.0,"estoque_total":23.0,"saidas_4m":53.0,"media_30":13.25,"media_60":26.5,"media_90":39.75,"media_120":53.0,"duracao":52.1},{"sku":"171","fornecedor":"JP FLEX","produto":"Flexível de gás nitrílico 1m 1/2 M x F Fogão de piso Cooktop","un":"UN","estoque_loja":10.0,"estoque_exp":7.0,"estoque_total":17.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"160","fornecedor":"HIDROGAS","produto":"Flexível metálico Tomback P/ Medidor G2.5 1\" X 1 1/4/\"","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"142","fornecedor":"JP FLEX","produto":"Flexivel nitrilica bm x bm 0,60M","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"143","fornecedor":"JP FLEX","produto":"Flexivel nitrilica bm x bm 0,80M","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"145","fornecedor":"JP FLEX","produto":"Flexivel nitrilica bm x bm 1,20M","un":"UN","estoque_loja":0.0,"estoque_exp":6.0,"estoque_total":6.0,"saidas_4m":10.0,"media_30":2.5,"media_60":5.0,"media_90":7.5,"media_120":10.0,"duracao":72.0},{"sku":"146","fornecedor":"JP FLEX","produto":"Flexivel nitrilica bm x bm 1,50M","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"147","fornecedor":"JP FLEX","produto":"Flexivel nitrilica bm x bm 2,00M","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"149","fornecedor":"JP FLEX","produto":"Flexivel nitrilica bm x bm 2,50M","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"150","fornecedor":"JP FLEX","produto":"Flexivel nitrilica femea x bm 1,20M","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"144","fornecedor":"JP FLEX","produto":"Flexivel nitrilico bm x bm 1,00M","un":"UN","estoque_loja":20.0,"estoque_exp":15.0,"estoque_total":35.0,"saidas_4m":5.0,"media_30":1.25,"media_60":2.5,"media_90":3.75,"media_120":5.0,"duracao":840.0},{"sku":"169","fornecedor":"JP FLEX","produto":"Flexível Nitrílico Para Gás 1,20m F x BM NBR Fogão E Cooktop","un":"UN","estoque_loja":0.0,"estoque_exp":10.0,"estoque_total":10.0,"saidas_4m":12.0,"media_30":3.0,"media_60":6.0,"media_90":9.0,"media_120":12.0,"duracao":100.0},{"sku":"168","fornecedor":"JP FLEX","produto":"Flexível Nitrílico Para Gás 1m F x BM NBR 13419 Fogão Forno","un":"UN","estoque_loja":0.0,"estoque_exp":9.0,"estoque_total":9.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":1080.0},{"sku":"211","fornecedor":"HAEKE","produto":"Flexível Para água Haenke 30cm Aquecedores de água 3/4 x 1/2","un":"UN","estoque_loja":20.0,"estoque_exp":14.0,"estoque_total":34.0,"saidas_4m":138.0,"media_30":34.5,"media_60":69.0,"media_90":103.5,"media_120":138.0,"duracao":29.6},{"sku":"212","fornecedor":"HAEKE","produto":"Flexível Para água Haenke 40cm Aquecedores de água 3/4 x 1/2","un":"UN","estoque_loja":20.0,"estoque_exp":17.0,"estoque_total":37.0,"saidas_4m":80.0,"media_30":20.0,"media_60":40.0,"media_90":60.0,"media_120":80.0,"duracao":55.5},{"sku":"95","fornecedor":"JP FLEX","produto":"Flexível PVC 1,20m M/F Terminal Ferro","un":"UN","estoque_loja":15.0,"estoque_exp":5.0,"estoque_total":20.0,"saidas_4m":36.0,"media_30":9.0,"media_60":18.0,"media_90":27.0,"media_120":36.0,"duracao":66.7},{"sku":"164","fornecedor":"JP FLEX","produto":"Flexível PVC 1m BM x BM","un":"UN","estoque_loja":4.0,"estoque_exp":0,"estoque_total":4.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"140","fornecedor":"JP FLEX","produto":"Flexível PVC 1m F 1/2 x 3/8 BM Terminal Ferro","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":0.0},{"sku":"96","fornecedor":"JP FLEX","produto":"Flexível PVC 1m M/F Terminal Ferro","un":"UN","estoque_loja":30.0,"estoque_exp":4.0,"estoque_total":34.0,"saidas_4m":143.0,"media_30":35.75,"media_60":71.5,"media_90":107.25,"media_120":143.0,"duracao":28.5},{"sku":"10","fornecedor":"CONTUFLEX","produto":"Flexível Tomback 1,20m M/F","un":"UN","estoque_loja":105.0,"estoque_exp":4.0,"estoque_total":109.0,"saidas_4m":266.0,"media_30":66.5,"media_60":133.0,"media_90":199.5,"media_120":266.0,"duracao":49.2},{"sku":"85","fornecedor":"CONTUFLEX","produto":"Flexível Tomback 1,5m M/F","un":"UN","estoque_loja":30.0,"estoque_exp":8.0,"estoque_total":38.0,"saidas_4m":74.0,"media_30":18.5,"media_60":37.0,"media_90":55.5,"media_120":74.0,"duracao":61.6},{"sku":"93","fornecedor":"CONTUFLEX","produto":"Flexível tomback 1m 3/4 M/F","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"9","fornecedor":"CONTUFLEX","produto":"Flexível Tomback 1m M/F","un":"UN","estoque_loja":40.0,"estoque_exp":9.0,"estoque_total":49.0,"saidas_4m":265.0,"media_30":66.25,"media_60":132.5,"media_90":198.75,"media_120":265.0,"duracao":22.2},{"sku":"217","fornecedor":"CONTUFLEX","produto":"Flexível tomback 2,5m 1/2 x 1/2 M/F","un":"UN","estoque_loja":1.0,"estoque_exp":0,"estoque_total":1.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"181","fornecedor":"CONTUFLEX","produto":"Flexível tomback 2m M/F 1/2","un":"UN","estoque_loja":0.0,"estoque_exp":1.0,"estoque_total":1.0,"saidas_4m":21.0,"media_30":5.25,"media_60":10.5,"media_90":15.75,"media_120":21.0,"duracao":5.7},{"sku":"170","fornecedor":"CONTUFLEX","produto":"Flexível tomback 3/4 F x 1/2 M 30cm Para condução de gás","un":"UN","estoque_loja":0.0,"estoque_exp":25.0,"estoque_total":25.0,"saidas_4m":55.0,"media_30":13.75,"media_60":27.5,"media_90":41.25,"media_120":55.0,"duracao":54.5},{"sku":"11","fornecedor":"CONTUFLEX","produto":"Flexível Tomback 30cm M/F","un":"UN","estoque_loja":0.0,"estoque_exp":8.0,"estoque_total":8.0,"saidas_4m":607.0,"media_30":151.75,"media_60":303.5,"media_90":455.25,"media_120":607.0,"duracao":1.6},{"sku":"209","fornecedor":"CONTUFLEX","produto":"Flexível Tomback 40cm 3/4 F x 1/2 M para condução de gases","un":"UN","estoque_loja":0.0,"estoque_exp":1.0,"estoque_total":1.0,"saidas_4m":84.0,"media_30":21.0,"media_60":42.0,"media_90":63.0,"media_120":84.0,"duracao":1.4},{"sku":"12","fornecedor":"CONTUFLEX","produto":"Flexível Tomback 40cm M/F","un":"UN","estoque_loja":0.0,"estoque_exp":14.0,"estoque_total":14.0,"saidas_4m":481.0,"media_30":120.25,"media_60":240.5,"media_90":360.75,"media_120":481.0,"duracao":3.5},{"sku":"208","fornecedor":"CONTUFLEX","produto":"Flexível Tomback 50cm M/F","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"8","fornecedor":"CONTUFLEX","produto":"Flexível Tomback 60cm M/F","un":"UN","estoque_loja":0.0,"estoque_exp":3.0,"estoque_total":3.0,"saidas_4m":294.0,"media_30":73.5,"media_60":147.0,"media_90":220.5,"media_120":294.0,"duracao":1.2},{"sku":"86","fornecedor":"CONTUFLEX","produto":"Flexível Tomback 80cm M/F","un":"UN","estoque_loja":100.0,"estoque_exp":10.0,"estoque_total":110.0,"saidas_4m":130.0,"media_30":32.5,"media_60":65.0,"media_90":97.5,"media_120":130.0,"duracao":101.5},{"sku":"159","fornecedor":"HIDROGAS","produto":"Gás Mapp (Maçarico portátil)","un":"UN","estoque_loja":0.0,"estoque_exp":1.0,"estoque_total":1.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":120.0},{"sku":"81","fornecedor":"HIDROGAS","produto":"Guarnição O'ring de borracha para flexíveis metálicos","un":"UN","estoque_loja":0.0,"estoque_exp":6.0,"estoque_total":6.0,"saidas_4m":616.0,"media_30":154.0,"media_60":308.0,"media_90":462.0,"media_120":616.0,"duracao":1.2},{"sku":"113","fornecedor":"HIDROGAS","produto":"Injetor cosmopolita 0,60mm latão macho Para Fogão Industrial","un":"UN","estoque_loja":0.0,"estoque_exp":44.0,"estoque_total":44.0,"saidas_4m":442.0,"media_30":110.5,"media_60":221.0,"media_90":331.5,"media_120":442.0,"duracao":11.9},{"sku":"205","fornecedor":"W.I","produto":"Injetor de fogão Atlas encaixe 0,65mm","un":"UN","estoque_loja":0.0,"estoque_exp":290.0,"estoque_total":290.0,"saidas_4m":20.0,"media_30":5.0,"media_60":10.0,"media_90":15.0,"media_120":20.0,"duracao":1740.0},{"sku":"226","fornecedor":"W.I","produto":"Injetor de fogão Atlas encaixe 0,70mm","un":"UN","estoque_loja":0.0,"estoque_exp":381.0,"estoque_total":381.0,"saidas_4m":22.0,"media_30":5.5,"media_60":11.0,"media_90":16.5,"media_120":22.0,"duracao":2078.2},{"sku":"227","fornecedor":"W.I","produto":"Injetor de fogão Atlas encaixe 0,90mm","un":"UN","estoque_loja":0.0,"estoque_exp":26.0,"estoque_total":26.0,"saidas_4m":4.0,"media_30":1.0,"media_60":2.0,"media_90":3.0,"media_120":4.0,"duracao":780.0},{"sku":"228","fornecedor":"W.I","produto":"Injetor de fogão Atlas encaixe 0,97mm","un":"UN","estoque_loja":0.0,"estoque_exp":1018.0,"estoque_total":1018.0,"saidas_4m":6.0,"media_30":1.5,"media_60":3.0,"media_90":4.5,"media_120":6.0,"duracao":20360.0},{"sku":"71","fornecedor":"HIDROGAS","produto":"Injetor para fogão latão 0,65mm","un":"UN","estoque_loja":0.0,"estoque_exp":1330.0,"estoque_total":1330.0,"saidas_4m":2651.0,"media_30":662.75,"media_60":1325.5,"media_90":1988.25,"media_120":2651.0,"duracao":60.2},{"sku":"189","fornecedor":"HIDROGAS","produto":"Injetor para fogão latão 0,70mm","un":"UN","estoque_loja":300.0,"estoque_exp":45.0,"estoque_total":345.0,"saidas_4m":346.0,"media_30":86.5,"media_60":173.0,"media_90":259.5,"media_120":346.0,"duracao":119.7},{"sku":"190","fornecedor":"HIDROGAS","produto":"Injetor para fogão latão 0,80mm","un":"UN","estoque_loja":0.0,"estoque_exp":894.0,"estoque_total":894.0,"saidas_4m":938.0,"media_30":234.5,"media_60":469.0,"media_90":703.5,"media_120":938.0,"duracao":114.4},{"sku":"191","fornecedor":"HIDROGAS","produto":"Injetor para fogão latão 0,85mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":20.0,"media_30":5.0,"media_60":10.0,"media_90":15.0,"media_120":20.0,"duracao":0.0},{"sku":"177","fornecedor":"HIDROGAS","produto":"Injetor para fogão latão 0,90mm","un":"UN","estoque_loja":0.0,"estoque_exp":219.0,"estoque_total":219.0,"saidas_4m":491.0,"media_30":122.75,"media_60":245.5,"media_90":368.25,"media_120":491.0,"duracao":53.5},{"sku":"70","fornecedor":"HIDROGAS","produto":"Injetor para fogão latão 0,95mm","un":"UN","estoque_loja":0.0,"estoque_exp":1188.0,"estoque_total":1188.0,"saidas_4m":4717.0,"media_30":1179.25,"media_60":2358.5,"media_90":3537.75,"media_120":4717.0,"duracao":30.2},{"sku":"192","fornecedor":"HIDROGAS","produto":"Injetor para fogão latão 0,95mm c/ rebaixo","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"116","fornecedor":"HIDROGAS","produto":"Injetor para fogão latão 0,97mm","un":"UN","estoque_loja":300.0,"estoque_exp":259.0,"estoque_total":559.0,"saidas_4m":2709.0,"media_30":677.25,"media_60":1354.5,"media_90":2031.75,"media_120":2709.0,"duracao":24.8},{"sku":"92","fornecedor":"HIDROGAS","produto":"Injetor para fogão latão 1,10mm","un":"UN","estoque_loja":0.0,"estoque_exp":774.0,"estoque_total":774.0,"saidas_4m":2353.0,"media_30":588.25,"media_60":1176.5,"media_90":1764.75,"media_120":2353.0,"duracao":39.5},{"sku":"210","fornecedor":"HIDROGAS","produto":"Injetor para fogão latão 1,20mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"237","fornecedor":"HIDROGAS","produto":"Injetor para fogão latão 1,35mm","un":"UN","estoque_loja":0.0,"estoque_exp":579.0,"estoque_total":579.0,"saidas_4m":861.0,"media_30":215.25,"media_60":430.5,"media_90":645.75,"media_120":861.0,"duracao":80.7},{"sku":"229","fornecedor":"W.I","produto":"Injetor para forno fogão Atlas 0,80mm","un":"UN","estoque_loja":0.0,"estoque_exp":90.0,"estoque_total":90.0,"saidas_4m":15.0,"media_30":3.75,"media_60":7.5,"media_90":11.25,"media_120":15.0,"duracao":720.0},{"sku":"230","fornecedor":"W.I","produto":"Injetor para forno fogão Atlas 1,10mm","un":"UN","estoque_loja":0.0,"estoque_exp":152.0,"estoque_total":152.0,"saidas_4m":3.0,"media_30":0.75,"media_60":1.5,"media_90":2.25,"media_120":3.0,"duracao":6080.0},{"sku":"7","fornecedor":"CLESSE","produto":"Inversor automático 10kg Clesse 002635AF","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":44.0,"media_30":11.0,"media_60":22.0,"media_90":33.0,"media_120":44.0,"duracao":0.0},{"sku":"249","fornecedor":"EMMETI","produto":"Kit flexível aquecedor Emmeti Alto Padrão","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":7.0,"media_30":1.75,"media_60":3.5,"media_90":5.25,"media_120":7.0,"duracao":0.0},{"sku":"32","fornecedor":"JP FLEX","produto":"Luva 1/2 latão","un":"UN","estoque_loja":30.0,"estoque_exp":13.0,"estoque_total":43.0,"saidas_4m":87.0,"media_30":21.75,"media_60":43.5,"media_90":65.25,"media_120":87.0,"duracao":59.3},{"sku":"94","fornecedor":"HIDROGAS","produto":"Luva cobre 15mm","un":"UN","estoque_loja":0.0,"estoque_exp":10.0,"estoque_total":10.0,"saidas_4m":15.0,"media_30":3.75,"media_60":7.5,"media_90":11.25,"media_120":15.0,"duracao":80.0},{"sku":"178","fornecedor":"HIDROGAS","produto":"Luva cobre 22mm SxS","un":"UN","estoque_loja":0.0,"estoque_exp":5.0,"estoque_total":5.0,"saidas_4m":0.0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0.0,"duracao":9999},{"sku":"CB19","fornecedor":"HIDROGAS","produto":"Luva passante cobre 28mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB20","fornecedor":"HIDROGAS","produto":"Luva passante cobre SxS 15mm S/ Anel","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB21","fornecedor":"HIDROGAS","produto":"Luva passante cobre SxS 22mm S/ anel","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"198","fornecedor":"CENTRO","produto":"Mandril Mancal Duplo","un":"UN","estoque_loja":0.0,"estoque_exp":4.0,"estoque_total":4.0,"saidas_4m":5.0,"media_30":1.25,"media_60":2.5,"media_90":3.75,"media_120":5.0,"duracao":96.0},{"sku":"246","fornecedor":"RENATA","produto":"Mangueira 11k 4,00mm Cristal 1 Metro","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":190.75,"media_30":47.69,"media_60":95.38,"media_90":143.06,"media_120":190.75,"duracao":0.0},{"sku":"243","fornecedor":"RENATA","produto":"Mangueira 11k 4,00mm Cristal Rolo","un":"UN","estoque_loja":20.0,"estoque_exp":0,"estoque_total":20.0,"saidas_4m":35.0,"media_30":8.75,"media_60":17.5,"media_90":26.25,"media_120":35.0,"duracao":68.6},{"sku":"65","fornecedor":"RENATA","produto":"Mangueira amarela 7k","un":"UN","estoque_loja":1680.0,"estoque_exp":30.0,"estoque_total":1710.0,"saidas_4m":461.0,"media_30":115.25,"media_60":230.5,"media_90":345.75,"media_120":461.0,"duracao":445.1},{"sku":"193","fornecedor":"HIDROGAS","produto":"Mangueira amarela trançada NBR 1,25 MT Ibira","un":"UN","estoque_loja":1100.0,"estoque_exp":3.0,"estoque_total":1103.0,"saidas_4m":318.0,"media_30":79.5,"media_60":159.0,"media_90":238.5,"media_120":318.0,"duracao":416.2},{"sku":"63","fornecedor":"JP FLEX","produto":"Mangueira pigtail 1m P13kg","un":"UN","estoque_loja":100.0,"estoque_exp":15.0,"estoque_total":115.0,"saidas_4m":614.0,"media_30":153.5,"media_60":307.0,"media_90":460.5,"media_120":614.0,"duracao":22.5},{"sku":"16","fornecedor":"JP FLEX","produto":"Mangueira pigtail 1m P45kg","un":"UN","estoque_loja":50.0,"estoque_exp":2.0,"estoque_total":52.0,"saidas_4m":750.0,"media_30":187.5,"media_60":375.0,"media_90":562.5,"media_120":750.0,"duracao":8.3},{"sku":"17","fornecedor":"JP FLEX","produto":"Mangueira pigtail 50cm P13kg","un":"UN","estoque_loja":70.0,"estoque_exp":20.0,"estoque_total":90.0,"saidas_4m":259.0,"media_30":64.75,"media_60":129.5,"media_90":194.25,"media_120":259.0,"duracao":41.7},{"sku":"15","fornecedor":"JP FLEX","produto":"Mangueira pigtail 50cm P45kg","un":"UN","estoque_loja":140.0,"estoque_exp":23.0,"estoque_total":163.0,"saidas_4m":286.0,"media_30":71.5,"media_60":143.0,"media_90":214.5,"media_120":286.0,"duracao":68.4},{"sku":"196","fornecedor":"HIDROGAS","produto":"Manômetro 0-100 psi Famabras","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"84","fornecedor":"JP FLEX","produto":"Niple 1/2 x 1/4 NPT","un":"UN","estoque_loja":0.0,"estoque_exp":43.0,"estoque_total":43.0,"saidas_4m":26.0,"media_30":6.5,"media_60":13.0,"media_90":19.5,"media_120":26.0,"duracao":198.5},{"sku":"187","fornecedor":"JP FLEX","produto":"Niple 1/2\" fêmea x 3/8BM latão","un":"UN","estoque_loja":0.0,"estoque_exp":15.0,"estoque_total":15.0,"saidas_4m":6.0,"media_30":1.5,"media_60":3.0,"media_90":4.5,"media_120":6.0,"duracao":300.0},{"sku":"89","fornecedor":"JP FLEX","produto":"Niple 1/2\" macho x 3/8BM latão","un":"UN","estoque_loja":0.0,"estoque_exp":5.0,"estoque_total":5.0,"saidas_4m":14.0,"media_30":3.5,"media_60":7.0,"media_90":10.5,"media_120":14.0,"duracao":42.9},{"sku":"28","fornecedor":"JP FLEX","produto":"Niple 1/2\" x 1/8\" latão","un":"UN","estoque_loja":0.0,"estoque_exp":4.0,"estoque_total":4.0,"saidas_4m":268.0,"media_30":67.0,"media_60":134.0,"media_90":201.0,"media_120":268.0,"duracao":1.8},{"sku":"27","fornecedor":"JP FLEX","produto":"Niple 1/2\" x 3/8\" latão rosca NPT","un":"UN","estoque_loja":48.0,"estoque_exp":12.0,"estoque_total":60.0,"saidas_4m":409.0,"media_30":102.25,"media_60":204.5,"media_90":306.75,"media_120":409.0,"duracao":17.6},{"sku":"167","fornecedor":"HIDROGAS","produto":"Niple de reduçao aço galvanizado 1\" x 1/2\"","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"21","fornecedor":"HIDROGAS","produto":"Niple duplo 1/2 pol. Tupy","un":"UN","estoque_loja":30.0,"estoque_exp":29.0,"estoque_total":59.0,"saidas_4m":294.0,"media_30":73.5,"media_60":147.0,"media_90":220.5,"media_120":294.0,"duracao":24.1},{"sku":"110","fornecedor":"EMMETI","produto":"Niple duplo Ferro 1\" polegada","un":"UN","estoque_loja":0,"estoque_exp":0,"estoque_total":0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"111","fornecedor":"EMMETI","produto":"Niple duplo latão 1 polegada","un":"UN","estoque_loja":10.0,"estoque_exp":5.0,"estoque_total":15.0,"saidas_4m":31.0,"media_30":7.75,"media_60":15.5,"media_90":23.25,"media_120":31.0,"duracao":58.1},{"sku":"25","fornecedor":"JP FLEX","produto":"Niple duplo latão 1/2 pol.","un":"UN","estoque_loja":100.0,"estoque_exp":10.0,"estoque_total":110.0,"saidas_4m":480.0,"media_30":120.0,"media_60":240.0,"media_90":360.0,"media_120":480.0,"duracao":27.5},{"sku":"122","fornecedor":"HIDROGAS","produto":"Niple duplo latão 3/8 pol.","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"121","fornecedor":"HIDROGAS","produto":"Niple duplo latão 5/8 pol.","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"221","fornecedor":"META","produto":"Passa gás parede 1/2 F x 3/8 BM S/ registro IRON","un":"UN","estoque_loja":0.0,"estoque_exp":7.0,"estoque_total":7.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":840.0},{"sku":"47","fornecedor":"HIDROGAS","produto":"Pasta para soldagem manual 110g Soft","un":"UN","estoque_loja":5.0,"estoque_exp":1.0,"estoque_total":6.0,"saidas_4m":7.0,"media_30":1.75,"media_60":3.5,"media_90":5.25,"media_120":7.0,"duracao":102.9},{"sku":"235","fornecedor":"JP FLEX","produto":"Pigtail Liquigas Femea x 7/161 metro","un":"UN","estoque_loja":31.0,"estoque_exp":0,"estoque_total":31.0,"saidas_4m":2.0,"media_30":0.5,"media_60":1.0,"media_90":1.5,"media_120":2.0,"duracao":1860.0},{"sku":"236","fornecedor":"JP FLEX","produto":"Pigtail Liquigas Femea x 7/1650CM","un":"UN","estoque_loja":0.0,"estoque_exp":16.0,"estoque_total":16.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"163","fornecedor":"HIDROGAS","produto":"Piscano 1/2 x 3/4\"","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"141","fornecedor":"JP FLEX","produto":"Plug tampão 1/2\"","un":"UN","estoque_loja":0.0,"estoque_exp":14.0,"estoque_total":14.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":1680.0},{"sku":"118","fornecedor":"HIDROGAS","produto":"Porca latão 3/8 SAE","un":"UN","estoque_loja":0.0,"estoque_exp":102.0,"estoque_total":102.0,"saidas_4m":3.0,"media_30":0.75,"media_60":1.5,"media_90":2.25,"media_120":3.0,"duracao":4080.0},{"sku":"214","fornecedor":"JP FLEX","produto":"Prolongador 1/2 curto latão","un":"UN","estoque_loja":0.0,"estoque_exp":9.0,"estoque_total":9.0,"saidas_4m":31.0,"media_30":7.75,"media_60":15.5,"media_90":23.25,"media_120":31.0,"duracao":34.8},{"sku":"238","fornecedor":"JP FLEX","produto":"Prolongador 1/2 Latão Longo","un":"UN","estoque_loja":0.0,"estoque_exp":4.0,"estoque_total":4.0,"saidas_4m":5.0,"media_30":1.25,"media_60":2.5,"media_90":3.75,"media_120":5.0,"duracao":96.0},{"sku":"123","fornecedor":"JP FLEX","produto":"Prolongador 1/2 médio Latão","un":"UN","estoque_loja":0.0,"estoque_exp":26.0,"estoque_total":26.0,"saidas_4m":20.0,"media_30":5.0,"media_60":10.0,"media_90":15.0,"media_120":20.0,"duracao":156.0},{"sku":"37","fornecedor":"HIDROGAS","produto":"Queimador infravermelho","un":"UN","estoque_loja":6.0,"estoque_exp":9.0,"estoque_total":15.0,"saidas_4m":29.0,"media_30":7.25,"media_60":14.5,"media_90":21.75,"media_120":29.0,"duracao":62.1},{"sku":"62","fornecedor":"ISOFORT","produto":"Redutor de Chaminé de Aluminio 100 x 60mm","un":"UN","estoque_loja":0.0,"estoque_exp":1.0,"estoque_total":1.0,"saidas_4m":100.0,"media_30":25.0,"media_60":50.0,"media_90":75.0,"media_120":100.0,"duracao":1.2},{"sku":"137","fornecedor":"ISOFORT","produto":"Redutor de chaminé de alumínio 120 x 60mm","un":"UN","estoque_loja":10.0,"estoque_exp":13.0,"estoque_total":23.0,"saidas_4m":3.0,"media_30":0.75,"media_60":1.5,"media_90":2.25,"media_120":3.0,"duracao":920.0},{"sku":"53","fornecedor":"ISOFORT","produto":"Redutor de chaminé de alumínio 80 x 100mm","un":"UN","estoque_loja":42.0,"estoque_exp":7.0,"estoque_total":49.0,"saidas_4m":48.0,"media_30":12.0,"media_60":24.0,"media_90":36.0,"media_120":48.0,"duracao":122.5},{"sku":"64","fornecedor":"ISOFORT","produto":"Redutor de chaminé de alumínio 80 x 60mm","un":"UN","estoque_loja":32.0,"estoque_exp":11.0,"estoque_total":43.0,"saidas_4m":225.0,"media_30":56.25,"media_60":112.5,"media_90":168.75,"media_120":225.0,"duracao":22.9},{"sku":"173","fornecedor":"ISOFORT","produto":"Redutor de chaminé de alumínio 90 x 80mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":3.0,"media_30":0.75,"media_60":1.5,"media_90":2.25,"media_120":3.0,"duracao":0.0},{"sku":"82","fornecedor":"CRISTAL","produto":"Refil de gás propano butano Western Com adaptador de bicos para isqueiros e maçaricos 300ml","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"218","fornecedor":"HIDROGAS","produto":"Registro alta pressão latão 1/8 F x F","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"223","fornecedor":"ALIANÇA","produto":"Registro Estabilizador Aliança 74524/01 10m³ 1/2 BSP - GN","un":"UN","estoque_loja":0.0,"estoque_exp":27.0,"estoque_total":27.0,"saidas_4m":19.0,"media_30":4.75,"media_60":9.5,"media_90":14.25,"media_120":19.0,"duracao":170.5},{"sku":"245","fornecedor":"HIDROGAS","produto":"Registro Manipulo Alta pressão1/8 F X F","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"244","fornecedor":"HIDROGAS","produto":"Registro Manipulo Alta pressão1/8 MX F","un":"UN","estoque_loja":0.0,"estoque_exp":9.0,"estoque_total":9.0,"saidas_4m":4.0,"media_30":1.0,"media_60":2.0,"media_90":3.0,"media_120":4.0,"duracao":270.0},{"sku":"154","fornecedor":"HIDROGAS","produto":"Registro Ramal Para Chapeira Haste Longa Zamac","un":"UN","estoque_loja":0.0,"estoque_exp":11.0,"estoque_total":11.0,"saidas_4m":54.0,"media_30":13.5,"media_60":27.0,"media_90":40.5,"media_120":54.0,"duracao":24.4},{"sku":"186","fornecedor":"ALIANÇA","produto":"Regulador 1kg 505/01 Baixa pressão residencial","un":"UN","estoque_loja":825.0,"estoque_exp":18.0,"estoque_total":843.0,"saidas_4m":428.0,"media_30":107.0,"media_60":214.0,"media_90":321.0,"media_120":428.0,"duracao":236.4},{"sku":"91","fornecedor":"ALIANÇA","produto":"Regulador 2kg Aliança 506/10 1/2 saída BSP","un":"UN","estoque_loja":20.0,"estoque_exp":23.0,"estoque_total":43.0,"saidas_4m":27.0,"media_30":6.75,"media_60":13.5,"media_90":20.25,"media_120":27.0,"duracao":191.1},{"sku":"139","fornecedor":"CLESSE","produto":"Regulador Alta vazão 100kg FGDR25/25 Clesse Comap","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"156","fornecedor":"CLESSE","produto":"Regulador de Alta Pressão Clesse AP 40 C/ Manômetro","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":10.0,"media_30":2.5,"media_60":5.0,"media_90":7.5,"media_120":10.0,"duracao":0.0},{"sku":"5","fornecedor":"HIDROGAS","produto":"Regulador de gás 1kg Apis delta 325504","un":"UN","estoque_loja":0.0,"estoque_exp":19.0,"estoque_total":19.0,"saidas_4m":48.0,"media_30":12.0,"media_60":24.0,"media_90":36.0,"media_120":48.0,"duracao":47.5},{"sku":"112","fornecedor":"ALIANÇA","produto":"Regulador de gás industrial 9kg/h Aliança 76501/01 VM 3/8\"","un":"UN","estoque_loja":31.0,"estoque_exp":6.0,"estoque_total":37.0,"saidas_4m":71.0,"media_30":17.75,"media_60":35.5,"media_90":53.25,"media_120":71.0,"duracao":62.5},{"sku":"194","fornecedor":"ALIANÇA","produto":"Regulador de gás residencial 506/18 BT 5kg 3/8 SAE Aliança","un":"UN","estoque_loja":0.0,"estoque_exp":17.0,"estoque_total":17.0,"saidas_4m":36.0,"media_30":9.0,"media_60":18.0,"media_90":27.0,"media_120":36.0,"duracao":56.7},{"sku":"1","fornecedor":"ALIANÇA","produto":"Regulador de pressão 12kg Aliança 76511 AM","un":"UN","estoque_loja":245.0,"estoque_exp":1.0,"estoque_total":246.0,"saidas_4m":138.0,"media_30":34.5,"media_60":69.0,"media_90":103.5,"media_120":138.0,"duracao":213.9},{"sku":"153","fornecedor":"ALIANÇA","produto":"Regulador de pressão 1kg Aliança 504/01 borboleta P13","un":"UN","estoque_loja":50.0,"estoque_exp":16.0,"estoque_total":66.0,"saidas_4m":158.0,"media_30":39.5,"media_60":79.0,"media_90":118.5,"media_120":158.0,"duracao":50.1},{"sku":"2","fornecedor":"ALIANÇA","produto":"Regulador de pressão 1kg c/ manômetro Aliança 504/01","un":"UN","estoque_loja":20.0,"estoque_exp":4.0,"estoque_total":24.0,"saidas_4m":16.0,"media_30":4.0,"media_60":8.0,"media_90":12.0,"media_120":16.0,"duracao":180.0},{"sku":"182","fornecedor":"ALIANÇA","produto":"Regulador de pressão 2kg Aliança 3/8 SAE","un":"UN","estoque_loja":35.0,"estoque_exp":0,"estoque_total":35.0,"saidas_4m":12.0,"media_30":3.0,"media_60":6.0,"media_90":9.0,"media_120":12.0,"duracao":350.0},{"sku":"50","fornecedor":"ALIANÇA","produto":"Regulador de pressão 2kg Aliança 506/01 BT","un":"UN","estoque_loja":40.0,"estoque_exp":26.0,"estoque_total":66.0,"saidas_4m":103.0,"media_30":25.75,"media_60":51.5,"media_90":77.25,"media_120":103.0,"duracao":76.9},{"sku":"3","fornecedor":"ALIANÇA","produto":"Regulador de pressão 7kg Aliança 506/03","un":"UN","estoque_loja":110.0,"estoque_exp":18.0,"estoque_total":128.0,"saidas_4m":279.0,"media_30":69.75,"media_60":139.5,"media_90":209.25,"media_120":279.0,"duracao":55.1},{"sku":"152","fornecedor":"ALIANÇA","produto":"Regulador de pressão Aliança 1kg 504/01 BT + Mangueira 120cm","un":"UN","estoque_loja":20.0,"estoque_exp":12.0,"estoque_total":32.0,"saidas_4m":11.0,"media_30":2.75,"media_60":5.5,"media_90":8.25,"media_120":11.0,"duracao":349.1},{"sku":"83","fornecedor":"HIDROGAS","produto":"Regulador de pressão c/manômetro Famabras FR45B","un":"UN","estoque_loja":0.0,"estoque_exp":2.0,"estoque_total":2.0,"saidas_4m":5.0,"media_30":1.25,"media_60":2.5,"media_90":3.75,"media_120":5.0,"duracao":48.0},{"sku":"18","fornecedor":"META","produto":"Suporte de parede L amarelo","un":"UN","estoque_loja":80.0,"estoque_exp":28.0,"estoque_total":108.0,"saidas_4m":569.0,"media_30":142.25,"media_60":284.5,"media_90":426.75,"media_120":569.0,"duracao":22.8},{"sku":"90","fornecedor":"META","produto":"Suporte regulador tipo U","un":"UN","estoque_loja":10.0,"estoque_exp":18.0,"estoque_total":28.0,"saidas_4m":31.0,"media_30":7.75,"media_60":15.5,"media_90":23.25,"media_120":31.0,"duracao":108.4},{"sku":"26","fornecedor":"HIDROGAS","produto":"Tê 1/2 x 1/2 x 1/2 latão","un":"UN","estoque_loja":60.0,"estoque_exp":25.0,"estoque_total":85.0,"saidas_4m":337.0,"media_30":84.25,"media_60":168.5,"media_90":252.75,"media_120":337.0,"duracao":30.3},{"sku":"20","fornecedor":"HIDROGAS","produto":"Tê 1/2\" x 1/2\" x 1/2\" Tupy","un":"UN","estoque_loja":40.0,"estoque_exp":16.0,"estoque_total":56.0,"saidas_4m":258.0,"media_30":64.5,"media_60":129.0,"media_90":193.5,"media_120":258.0,"duracao":26.0},{"sku":"PX07","fornecedor":"EMMETI","produto":"Tê 16x16x16mm Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":9.0,"estoque_total":9.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":1080.0},{"sku":"PX43","fornecedor":"EMMETI","produto":"Tê 16x20x16mm Redução Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX46","fornecedor":"EMMETI","produto":"Tê 20x16x20mm Redução Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX16","fornecedor":"EMMETI","produto":"Tê 20x20x20mm Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":14.0,"estoque_total":14.0,"saidas_4m":4.0,"media_30":1.0,"media_60":2.0,"media_90":3.0,"media_120":4.0,"duracao":420.0},{"sku":"PX47","fornecedor":"EMMETI","produto":"Tê 20x3/4x20mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX56","fornecedor":"EMMETI","produto":"Tê 26x16x26mm Redução Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX57","fornecedor":"EMMETI","produto":"Tê 26x20x26 Redução Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX54","fornecedor":"EMMETI","produto":"Tê 26x26x26mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":9.0,"estoque_total":9.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":1080.0},{"sku":"PX69","fornecedor":"EMMETI","produto":"Tê 32x3/4x32mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX68","fornecedor":"EMMETI","produto":"Tê 32x32x32mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"165","fornecedor":"HIDROGAS","produto":"Tê aço galvanizado 1\"","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB14","fornecedor":"HIDROGAS","produto":"Tê cobre SxS - 15 mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB13","fornecedor":"HIDROGAS","produto":"Tê cobre SxS - 22 mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX06","fornecedor":"EMMETI","produto":"Tê fêmea 16x1/2\"x16mm Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":3.0,"estoque_total":3.0,"saidas_4m":8.0,"media_30":2.0,"media_60":4.0,"media_90":6.0,"media_120":8.0,"duracao":45.0},{"sku":"PX15","fornecedor":"EMMETI","produto":"Tê fêmea 20x1/2\"x20mm Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":19.0,"estoque_total":19.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"PX55","fornecedor":"EMMETI","produto":"Tê Fêmea 26x3/4x26mm Gaspex Emmeti","un":"UN","estoque_loja":5.0,"estoque_exp":0,"estoque_total":5.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"CB17","fornecedor":"HIDROGAS","produto":"Tê redução cobreSxSxS 28x15x28","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"202","fornecedor":"HIDROGAS","produto":"Tê reversível c/ pastilha","un":"UN","estoque_loja":0.0,"estoque_exp":5.0,"estoque_total":5.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":600.0},{"sku":"188","fornecedor":"ISOFORT","produto":"Terminal Tee Auminio 100mm Para aquecedor Externo","un":"UN","estoque_loja":5.0,"estoque_exp":5.0,"estoque_total":10.0,"saidas_4m":18.0,"media_30":4.5,"media_60":9.0,"media_90":13.5,"media_120":18.0,"duracao":66.7},{"sku":"PX84","fornecedor":"EMMETI","produto":"Tesoura Corta tubo 16/20/26/32mm Amarela Emmeti","un":"UN","estoque_loja":1.0,"estoque_exp":0,"estoque_total":1.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"PX83","fornecedor":"EMMETI","produto":"Tesoura Corta tubo 16/32mm Vermelha Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"175","fornecedor":"HIDROGAS","produto":"Torneira Registro Ramal para fogão industrial 1/4 M x 1/8 F","un":"UN","estoque_loja":0.0,"estoque_exp":28.0,"estoque_total":28.0,"saidas_4m":16.0,"media_30":4.0,"media_60":8.0,"media_90":12.0,"media_120":16.0,"duracao":210.0},{"sku":"PX08","fornecedor":"EMMETI","produto":"Tubo alumínio multicamadas UV 16mm Emmeti Branco","un":"UN","estoque_loja":0.0,"estoque_exp":254.0,"estoque_total":254.0,"saidas_4m":63.0,"media_30":15.75,"media_60":31.5,"media_90":47.25,"media_120":63.0,"duracao":483.8},{"sku":"PX78","fornecedor":"EMMETI","produto":"Tubo alumínio multicamadas UV 16x2mm Emmeti Amarelo","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX09","fornecedor":"EMMETI","produto":"Tubo alumínio multicamadas UV 20mm Branco","un":"UN","estoque_loja":200.0,"estoque_exp":28.0,"estoque_total":228.0,"saidas_4m":47.0,"media_30":11.75,"media_60":23.5,"media_90":35.25,"media_120":47.0,"duracao":582.1},{"sku":"PX79","fornecedor":"EMMETI","produto":"Tubo alumínio multicamadas UV 20x2mm Emmeti Amarelo","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX76","fornecedor":"EMMETI","produto":"Tubo alumínio multicamadas UV 26mm Emmeti Branco","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX80","fornecedor":"EMMETI","produto":"Tubo alumínio multicamadas UV 26x3mm Emmeti Amarelo","un":"UN","estoque_loja":50.0,"estoque_exp":0,"estoque_total":50.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"PX77","fornecedor":"EMMETI","produto":"Tubo alumínio multicamadas UV 32mm Emmeti Branco","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX81","fornecedor":"EMMETI","produto":"Tubo alumínio multicamadas UV 32x3mm Emmeti Amarelo","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB18","fornecedor":"HIDROGAS","produto":"Tubo cobre classe E 22 X 0,60 Termomecânica","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"204","fornecedor":"HIDROGAS","produto":"Tubo cobre classe E 35 x 0,70 Termomecânica","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB10","fornecedor":"HIDROGAS","produto":"Tubo cobre rígido 15mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"CB11","fornecedor":"HIDROGAS","produto":"Tubo cobre rígido 22mm","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"001","fornecedor":"HIDROGAS","produto":"Tubo de cobre maleável 1/4\" 3m","un":"UN","estoque_loja":245.0,"estoque_exp":1.0,"estoque_total":246.0,"saidas_4m":138.0,"media_30":34.5,"media_60":69.0,"media_90":103.5,"media_120":138.0,"duracao":213.9},{"sku":"119","fornecedor":"HIDROGAS","produto":"União 1/2 NPT X 3/8 SAE","un":"UN","estoque_loja":0.0,"estoque_exp":19.0,"estoque_total":19.0,"saidas_4m":11.0,"media_30":2.75,"media_60":5.5,"media_90":8.25,"media_120":11.0,"duracao":207.3},{"sku":"PX17","fornecedor":"EMMETI","produto":"União 16x16mm Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":21.0,"estoque_total":21.0,"saidas_4m":4.0,"media_30":1.0,"media_60":2.0,"media_90":3.0,"media_120":4.0,"duracao":630.0},{"sku":"PX44","fornecedor":"EMMETI","produto":"União 20x16mm Redução Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":19.0,"estoque_total":19.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"PX18","fornecedor":"EMMETI","produto":"União 20x20mm Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":6.0,"estoque_total":6.0,"saidas_4m":10.0,"media_30":2.5,"media_60":5.0,"media_90":7.5,"media_120":10.0,"duracao":72.0},{"sku":"PX63","fornecedor":"EMMETI","produto":"União 26x16mm Redução Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX64","fornecedor":"EMMETI","produto":"União 26x20mm Redução Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX58","fornecedor":"EMMETI","produto":"União 26x26mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":7.0,"estoque_total":7.0,"saidas_4m":3.0,"media_30":0.75,"media_60":1.5,"media_90":2.25,"media_120":3.0,"duracao":280.0},{"sku":"203","fornecedor":"HIDROGAS","produto":"União 3/8 NPT F x 1/4 BM","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"117","fornecedor":"HIDROGAS","produto":"União 3/8 SAE X 3/8 BM","un":"UN","estoque_loja":0.0,"estoque_exp":11.0,"estoque_total":11.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":1320.0},{"sku":"PX74","fornecedor":"EMMETI","produto":"União 32x16mm Redução Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX70","fornecedor":"EMMETI","produto":"União 32x20mm Redução Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX75","fornecedor":"EMMETI","produto":"União 32x26mm Redução Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"PX71","fornecedor":"EMMETI","produto":"União 32x32mm Gaspex Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"87","fornecedor":"EMMETI","produto":"Válvula de bloqueio angular 1/2\" x 3/8BM Macho","un":"UN","estoque_loja":0.0,"estoque_exp":8.0,"estoque_total":8.0,"saidas_4m":16.0,"media_30":4.0,"media_60":8.0,"media_90":12.0,"media_120":16.0,"duracao":60.0},{"sku":"34","fornecedor":"EMMETI","produto":"Válvula de bloqueio angular 1/2M x 1/2F","un":"UN","estoque_loja":550.0,"estoque_exp":33.0,"estoque_total":583.0,"saidas_4m":890.0,"media_30":222.5,"media_60":445.0,"media_90":667.5,"media_120":890.0,"duracao":78.6},{"sku":"36","fornecedor":"EMMETI","produto":"Válvula de bloqueio angular 1/2M x 1/2M","un":"UN","estoque_loja":55.0,"estoque_exp":13.0,"estoque_total":68.0,"saidas_4m":144.0,"media_30":36.0,"media_60":72.0,"media_90":108.0,"media_120":144.0,"duracao":56.7},{"sku":"162","fornecedor":"EMMETI","produto":"Válvula de bloqueio reta 1\" F x F","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"161","fornecedor":"EMMETI","produto":"Válvula de bloqueio reta 1\" M x F","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"88","fornecedor":"EMMETI","produto":"Válvula de bloqueio reta 1/2\" x 3/8BM Macho","un":"UN","estoque_loja":20.0,"estoque_exp":0,"estoque_total":20.0,"saidas_4m":8.0,"media_30":2.0,"media_60":4.0,"media_90":6.0,"media_120":8.0,"duracao":300.0},{"sku":"183","fornecedor":"EMMETI","produto":"Válvula de bloqueio reta 1/2F x 1/2F","un":"UN","estoque_loja":0.0,"estoque_exp":4.0,"estoque_total":4.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":480.0},{"sku":"35","fornecedor":"EMMETI","produto":"Válvula de bloqueio reta 1/2Mx 1/2F","un":"UN","estoque_loja":120.0,"estoque_exp":16.0,"estoque_total":136.0,"saidas_4m":760.0,"media_30":190.0,"media_60":380.0,"media_90":570.0,"media_120":760.0,"duracao":21.5},{"sku":"99","fornecedor":"EMMETI","produto":"Válvula de fundo de poço 1/2\" Tela inox Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":1.0,"estoque_total":1.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"29","fornecedor":"JP FLEX","produto":"Válvula de retenção 1/2 x 7/16 latão","un":"UN","estoque_loja":0.0,"estoque_exp":55.0,"estoque_total":55.0,"saidas_4m":1085.0,"media_30":271.25,"media_60":542.5,"media_90":813.75,"media_120":1085.0,"duracao":6.1},{"sku":"98","fornecedor":"EMMETI","produto":"Válvula de Retenção Vertical C/ Sede em Polietileno 1/2\" Emmeti","un":"UN","estoque_loja":0.0,"estoque_exp":9.0,"estoque_total":9.0,"saidas_4m":3.0,"media_30":0.75,"media_60":1.5,"media_90":2.25,"media_120":3.0,"duracao":360.0},{"sku":"100","fornecedor":"EMMETI","produto":"Válvula de segurança macho/fêmea 4 bar 1/2\" Emmeti","un":"UN","estoque_loja":42.0,"estoque_exp":10.0,"estoque_total":52.0,"saidas_4m":60.0,"media_30":15.0,"media_60":30.0,"media_90":45.0,"media_120":60.0,"duracao":104.0},{"sku":"104","fornecedor":"EMMETI","produto":"Válvula eliminadora / Purgadora de ar 3/4\" Emmeti","un":"UN","estoque_loja":15.0,"estoque_exp":6.0,"estoque_total":21.0,"saidas_4m":43.0,"media_30":10.75,"media_60":21.5,"media_90":32.25,"media_120":43.0,"duracao":58.6},{"sku":"213","fornecedor":"EMMETI","produto":"Válvula esfera F/F 1\" gás BSP","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"240","fornecedor":"EMMETI","produto":"Valvula Esfera F/F Alavanca 1/2\" NPT","un":"UN","estoque_loja":70.0,"estoque_exp":7.0,"estoque_total":77.0,"saidas_4m":12.0,"media_30":3.0,"media_60":6.0,"media_90":9.0,"media_120":12.0,"duracao":770.0},{"sku":"239","fornecedor":"EMMETI","produto":"Valvula Esfera M/F Alavanca 1/2\" NPT","un":"UN","estoque_loja":0.0,"estoque_exp":6.0,"estoque_total":6.0,"saidas_4m":49.0,"media_30":12.25,"media_60":24.5,"media_90":36.75,"media_120":49.0,"duracao":14.7},{"sku":"120","fornecedor":"HIDROGAS","produto":"Válvula P13 - 1/2 NPT Externa X 5/8 Unc","un":"UN","estoque_loja":0.0,"estoque_exp":33.0,"estoque_total":33.0,"saidas_4m":10.0,"media_30":2.5,"media_60":5.0,"media_90":7.5,"media_120":10.0,"duracao":396.0},{"sku":"231","fornecedor":"ALIANÇA","produto":"Válvula Registro Esfera água FxF 1/2 BSP 540/1 Aliança","un":"UN","estoque_loja":5.0,"estoque_exp":26.0,"estoque_total":31.0,"saidas_4m":4.0,"media_30":1.0,"media_60":2.0,"media_90":3.0,"media_120":4.0,"duracao":930.0},{"sku":"232","fornecedor":"ALIANÇA","produto":"Válvula Registro Esfera Água FxF 3/4 BSP - 540/2 Aliança","un":"UN","estoque_loja":0.0,"estoque_exp":19.0,"estoque_total":19.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"33","fornecedor":"HIDROGAS","produto":"Manômetro de pressão colorido Cheio x Vazio 1/8\" M 0-125 psi","un":"UN","estoque_loja":36.0,"estoque_exp":9.0,"estoque_total":45.0,"saidas_4m":338.0,"media_30":84.5,"media_60":169.0,"media_90":253.5,"media_120":338.0,"duracao":16.0},{"sku":"312","fornecedor":"ISOFORT","produto":"Terminal Tee Auminio 60mm Para aquecedor Externo","un":"UN","estoque_loja":10.0,"estoque_exp":4.0,"estoque_total":14.0,"saidas_4m":47.0,"media_30":11.75,"media_60":23.5,"media_90":35.25,"media_120":47.0,"duracao":35.7},{"sku":"310","fornecedor":"ISOFORT","produto":"Terminal Tee Auminio 80mm Para aquecedor Externo","un":"UN","estoque_loja":0.0,"estoque_exp":15.0,"estoque_total":15.0,"saidas_4m":37.0,"media_30":9.25,"media_60":18.5,"media_90":27.75,"media_120":37.0,"duracao":48.6},{"sku":"D109","fornecedor":"CHAMIX","produto":"Duto de exaustão aluminio 120mm para aquecedor","un":"UN","estoque_loja":0,"estoque_exp":0,"estoque_total":0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"SRV127","fornecedor":"CHAMIX","produto":"Duto de exaustão alumínio 60mm para aquecedor","un":"UN","estoque_loja":0,"estoque_exp":0,"estoque_total":0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"SRV128","fornecedor":"CHAMIX","produto":"Duto de exaustão alumínio 80mm para aquecedor","un":"UN","estoque_loja":0,"estoque_exp":0,"estoque_total":0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"SRV129","fornecedor":"CHAMIX","produto":"Duto de exaustão alumínio 100mm para aquecedor","un":"UN","estoque_loja":0,"estoque_exp":0,"estoque_total":0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"SRV109","fornecedor":"CHAMIX","produto":"Duto de exaustão aluminio 120mm para aquecedor","un":"UN","estoque_loja":0,"estoque_exp":0,"estoque_total":0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"58","fornecedor":"RENATA","produto":"Mangueira amarela 7k Tamanho:1,25M","un":"UN","estoque_loja":0.0,"estoque_exp":10.0,"estoque_total":10.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"316","fornecedor":"HIDROGAS","produto":"Injetor para fogão latão 0,60mm","un":"UN","estoque_loja":0,"estoque_exp":0,"estoque_total":0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"317","fornecedor":"ALIANÇA","produto":"REGULADOR 76511/01 LJ","un":"UN","estoque_loja":44.0,"estoque_exp":2.0,"estoque_total":46.0,"saidas_4m":11.0,"media_30":2.75,"media_60":5.5,"media_90":8.25,"media_120":11.0,"duracao":501.8},{"sku":"319","fornecedor":"HIDROGAS","produto":"Tee Latão 3/4 x 3/4 x 3/4\"","un":"UN","estoque_loja":0.0,"estoque_exp":4.0,"estoque_total":4.0,"saidas_4m":2.0,"media_30":0.5,"media_60":1.0,"media_90":1.5,"media_120":2.0,"duracao":240.0},{"sku":"320","fornecedor":"HIDROGAS","produto":"Cotovelo Latão 3/4\" M x F","un":"UN","estoque_loja":0.0,"estoque_exp":2.0,"estoque_total":2.0,"saidas_4m":8.0,"media_30":2.0,"media_60":4.0,"media_90":6.0,"media_120":8.0,"duracao":30.0},{"sku":"321","fornecedor":"HIDROGAS","produto":"Luva Latão 3/4\"","un":"UN","estoque_loja":0.0,"estoque_exp":7.0,"estoque_total":7.0,"saidas_4m":4.0,"media_30":1.0,"media_60":2.0,"media_90":3.0,"media_120":4.0,"duracao":210.0},{"sku":"322","fornecedor":"HIDROGAS","produto":"Bucha Redução 1\" x 3/4\"","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":5.0,"media_30":1.25,"media_60":2.5,"media_90":3.75,"media_120":5.0,"duracao":0.0},{"sku":"323","fornecedor":"CHAMIX","produto":"Ducha Slim 10 x 10","un":"UN","estoque_loja":0.0,"estoque_exp":2.0,"estoque_total":2.0,"saidas_4m":3.0,"media_30":0.75,"media_60":1.5,"media_90":2.25,"media_120":3.0,"duracao":80.0},{"sku":"324","fornecedor":"CHAMIX","produto":"Ducha Slim 15 x 15","un":"UN","estoque_loja":0.0,"estoque_exp":2.0,"estoque_total":2.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"325","fornecedor":"CHAMIX","produto":"Misturador Externo","un":"UN","estoque_loja":3.0,"estoque_exp":0,"estoque_total":3.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":360.0},{"sku":"326","fornecedor":"CHAMIX","produto":"Caixa de pilha Aquecedor mecanico","un":"UN","estoque_loja":2.0,"estoque_exp":1.0,"estoque_total":3.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":360.0},{"sku":"327","fornecedor":"CHAMIX","produto":"UCE 3 FIOS 3,0 VOLTS","un":"UN","estoque_loja":0.0,"estoque_exp":2.0,"estoque_total":2.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"KO16DECORWH","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 16 DECOR BRANCO","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO21DECORWH","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 21 DECOR BRANCO","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO26DI","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 26DI PRIME - PRATA","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO33DI","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 33DI PRIME - PRATA","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO38DI","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 38DI PRIME - PRATA","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO46DI","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 46DI PRIME - PRATA","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO16DECORSL","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 16 DECOR PRATA","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO21DECORSL","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 21 DECOR PRATA","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"338","fornecedor":"BRASCOLA","produto":"SILICONE BVED SUPER TRANSPAR. 50G","un":"UN","estoque_loja":104.0,"estoque_exp":7.0,"estoque_total":111.0,"saidas_4m":128.0,"media_30":32.0,"media_60":64.0,"media_90":96.0,"media_120":128.0,"duracao":104.1},{"sku":"337","fornecedor":"BRASCOLA","produto":"PU40 USO GERAL CINZA  BISNAGA 80G","un":"UN","estoque_loja":9.0,"estoque_exp":7.0,"estoque_total":16.0,"saidas_4m":16.0,"media_30":4.0,"media_60":8.0,"media_90":12.0,"media_120":16.0,"duracao":120.0},{"sku":"336","fornecedor":"BRASCOLA","produto":"PU40 USO GERAL CINZA  380G CT","un":"UN","estoque_loja":35.0,"estoque_exp":6.0,"estoque_total":41.0,"saidas_4m":4.0,"media_30":1.0,"media_60":2.0,"media_90":3.0,"media_120":4.0,"duracao":1230.0},{"sku":"335","fornecedor":"BRASCOLA","produto":"PU40 USO GERAL BRANCO 380G CT","un":"UN","estoque_loja":17.0,"estoque_exp":6.0,"estoque_total":23.0,"saidas_4m":3.0,"media_30":0.75,"media_60":1.5,"media_90":2.25,"media_120":3.0,"duracao":920.0},{"sku":"334","fornecedor":"BRASCOLA","produto":"BRASCOLUB - DESINGRIPANTE 80G","un":"UN","estoque_loja":18.0,"estoque_exp":7.0,"estoque_total":25.0,"saidas_4m":8.0,"media_30":2.0,"media_60":4.0,"media_90":6.0,"media_120":8.0,"duracao":375.0},{"sku":"307","fornecedor":"STECK","produto":"Pilha D2 Para Aquecedores","un":"UN","estoque_loja":0.0,"estoque_exp":3.0,"estoque_total":3.0,"saidas_4m":3.0,"media_30":0.75,"media_60":1.5,"media_90":2.25,"media_120":3.0,"duracao":120.0},{"sku":"313","fornecedor":"ISOFORT","produto":"Chápeu Tee Chaminé P/ Aquecedores A Gás 80mm Aluminio","un":"UN","estoque_loja":0.0,"estoque_exp":158.0,"estoque_total":158.0,"saidas_4m":28.0,"media_30":7.0,"media_60":14.0,"media_90":21.0,"media_120":28.0,"duracao":677.1},{"sku":"314","fornecedor":"ISOFORT","produto":"Chápeu Tee Chaminé P/ Aquecedores A Gás 60mm Aluminio","un":"UN","estoque_loja":0.0,"estoque_exp":1262.0,"estoque_total":1262.0,"saidas_4m":62.0,"media_30":15.5,"media_60":31.0,"media_90":46.5,"media_120":62.0,"duracao":2442.6},{"sku":"315","fornecedor":"ALIANÇA","produto":"Filtro para Gás AL912 – 1/2 NPT Aliança GLP e GN","un":"UN","estoque_loja":0.0,"estoque_exp":7.0,"estoque_total":7.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"KO7D","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 07 (Á pilha)","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO15D","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 15M SLIM (Á pilha)","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO16HOMEWH","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 16WH HOME","un":"UN","estoque_loja":1.0,"estoque_exp":1.0,"estoque_total":2.0,"saidas_4m":21.0,"media_30":5.25,"media_60":10.5,"media_90":15.75,"media_120":21.0,"duracao":11.4},{"sku":"KO16HOMEBK","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 16BK HOME","un":"UN","estoque_loja":1.0,"estoque_exp":0,"estoque_total":1.0,"saidas_4m":5.0,"media_30":1.25,"media_60":2.5,"media_90":3.75,"media_120":5.0,"duracao":24.0},{"sku":"KO21HOMEBK","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 21BK HOME","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO21HOMEWH","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 21WH HOME","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":5.0,"media_30":1.25,"media_60":2.5,"media_90":3.75,"media_120":5.0,"duracao":0.0},{"sku":"KO26DHOME","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 26D HOME","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"KO36DHOME","fornecedor":"KOMECO","produto":"AQUECEDOR AUT KO 36D HOME","un":"UN","estoque_loja":0.0,"estoque_exp":0,"estoque_total":0.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"328","fornecedor":"CHAMIX","produto":"Diafragma  50mm Rinnai - Lorenzetti - Komeco","un":"UN","estoque_loja":5.0,"estoque_exp":1.0,"estoque_total":6.0,"saidas_4m":7.0,"media_30":1.75,"media_60":3.5,"media_90":5.25,"media_120":7.0,"duracao":102.9},{"sku":"329","fornecedor":"CHAMIX","produto":"Diafragma 81mm Lorenzetti - LO","un":"UN","estoque_loja":0.0,"estoque_exp":2.0,"estoque_total":2.0,"saidas_4m":4.0,"media_30":1.0,"media_60":2.0,"media_90":3.0,"media_120":4.0,"duracao":60.0},{"sku":"330","fornecedor":"CHAMIX","produto":"Diafragma 87mm Lorenzetti - Bosch - Rinnai - Komeco - Equibras","un":"UN","estoque_loja":0.0,"estoque_exp":2.0,"estoque_total":2.0,"saidas_4m":3.0,"media_30":0.75,"media_60":1.5,"media_90":2.25,"media_120":3.0,"duracao":80.0},{"sku":"331","fornecedor":"CHAMIX","produto":"Diafragma 51mm Jukers V1","un":"UN","estoque_loja":11.0,"estoque_exp":3.0,"estoque_total":14.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"332","fornecedor":"CHAMIX","produto":"Diafragma 51mm Jukers V2","un":"UN","estoque_loja":1.0,"estoque_exp":3.0,"estoque_total":4.0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":9999},{"sku":"339","fornecedor":"AEPIO","produto":"MEDIDOR DIAFRAGMA G1.0 MECANICO, ALUMINIO, 50 KPA","un":"UN","estoque_loja":0,"estoque_exp":0,"estoque_total":0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"340","fornecedor":"AEPIO","produto":"MEDIDOR G1.0 DIAFRAGMA, MECÂNICO, ALUMINIO, 50 KPA, G1.0","un":"UN","estoque_loja":0.0,"estoque_exp":12.0,"estoque_total":12.0,"saidas_4m":10.0,"media_30":2.5,"media_60":5.0,"media_90":7.5,"media_120":10.0,"duracao":144.0},{"sku":"341","fornecedor":"AEPIO","produto":"MEDIDOR  G1.6 DIAFRAGMA MECANICO, ALUMINIO, 50 KPA, G1.6, BASE","un":"UN","estoque_loja":0,"estoque_exp":0,"estoque_total":0,"saidas_4m":0,"media_30":0.0,"media_60":0.0,"media_90":0.0,"media_120":0,"duracao":0},{"sku":"342","fornecedor":"AEPIO","produto":"MEDIDOR G1.6 DIAFRAGMA, MECANICO, ALUMINIO, 50 KPA","un":"UN","estoque_loja":0.0,"estoque_exp":11.0,"estoque_total":11.0,"saidas_4m":1.0,"media_30":0.25,"media_60":0.5,"media_90":0.75,"media_120":1.0,"duracao":1320.0}];
+let dados = BASE_DATA.map(d=>({...d}));
+let prazoAtivo = 30;
+let sortField = 'duracao', sortDir = 1;
+let filtrosAtivos = new Set(['urgente','atencao']);
+let dashFiltros = new Set(['urgente','atencao']);
+let fforn = '';
+let pendingBase = null;
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const st = d => {
+  if(d.saidas_4m===0) return 'inativo';
+  if(d.duracao===0||d.duracao<15) return 'urgente';
+  if(d.duracao<45) return 'atencao';
+  return 'ok';
+};
+const compra = (d,p) => {
+  const m={30:d.media_30,60:d.media_60,90:d.media_90,120:d.media_120};
+  return Math.max(0,Math.ceil((m[p]||d.media_30)-d.estoque_total));
+};
+const fmt = n => (n===null||n===undefined)?'—':Math.round(n).toLocaleString('pt-BR');
+const fmtD = n => !n||n===0?'0':n>=9999?'+999':Math.round(n).toString();
+const col = d => ({urgente:'red',atencao:'yellow',ok:'green',inativo:'gray'})[st(d)];
+const pct = d => Math.min(100,(d.duracao||0)/120*100);
+
+// ─── NORMALIZAÇÃO ─────────────────────────────────────────────────────────────
+const normSku = s => {
+  s=String(s).trim().replace(/['"]/g,'').toUpperCase();
+  return /^\d+$/.test(s)?String(parseInt(s,10)):s;
+};
+const parseBR = v => {
+  if(!v) return 0;
+  let s=String(v).trim().replace(/['"\s]/g,'');
+  s=s.replace(/\.(\d{3})(?=[,\d]|$)/g,'$1').replace(',','.');
+  const n=parseFloat(s); return isNaN(n)?0:n;
+};
+const normForn = f => {
+  f=(f||'').trim().toUpperCase();
+  const m={
+    'BRASCOLA LTDA':'BRASCOLA',
+    'HIDROGAS DISTRIBUIDORA LTDA':'HIDROGAS','HIDROGÁS':'HIDROGAS',
+    'ISOFORT ALUMINIOS':'ISOFORT','ISO-FORT':'ISOFORT',
+    'RENATA INDUSTRIA E COMERCIO DE PLASTICOS LTDA.':'RENATA',
+    'RENATA INDUSTRIA E COMERCIO DE PLASTICOS LTDA':'RENATA',
+    'RENATA PLASTICOS':'RENATA',
+    'JP FLEXIVEIS E CONEXOES EIRELI':'JP FLEX',
+    'KOMGROUP INDUSTRIAL LTDA.':'KOMGROUP','KOMGROUP INDUSTRIAL LTDA':'KOMGROUP',
+    'NOVAIR IMPORTACAO E EXPORTACAO DE PRODUTOS CLIMATIZACAO LTDA':'NOVAIR',
+    'PLASTIFLUOR INDUSTRIA E COMERCIO DE VEDACOES LTDA.':'PLASTIFLUOR',
+    'PLASTIFLUOR INDUSTRIA E COMERCIO DE VEDACOES LTDA':'PLASTIFLUOR',
+    'SFERA COMERCIAL IMPORTADORA LTDA':'SFERA',
+    'ALIANCA METALURGICA S/A':'ALIANÇA',
+    'CLESSE DO BRASIL CAPTACAO, CONTROLE E CO':'CLESSE',
+    'AGAU EQUIPAMENTOS DE MEDICAO LTDA':'AGAU',
+    'BARUERI ATACADISTA DE MAT. DE CONST.LTDA':'BARUERI',
+    'CHAMIX DISTRIBUIDORA':'CHAMIX',
+    'PRO-GERAL':'PROGERAL','ROBERTO META':'META','HAENKE':'HAEKE',
+  };
+  return m[f]||f;
+};
+function detectSep(t){
+  const c=t.replace(/^\uFEFF/,'');
+  const f=c.split(/\r?\n/).slice(0,3).join('\n');
+  let semi=0,comma=0,inQ=false;
+  for(const ch of f){if(ch==='"')inQ=!inQ;else if(!inQ){if(ch===';')semi++;else if(ch===',')comma++;}}
+  return semi>=comma?';':',';
+}
+function splitL(line,sep){
+  const c=[];let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){inQ=!inQ;}else if(ch===sep&&!inQ){c.push(cur);cur='';}else{cur+=ch;}}
+  c.push(cur);return c;
+}
+function csv2obj(text){
+  text=text.replace(/^\uFEFF/,'');
+  const sep=detectSep(text);
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2)return[];
+  const hdr=splitL(lines[0],sep).map(h=>h.trim().replace(/^"+|"+$/g,'').toLowerCase());
+  return lines.slice(1).map(l=>{
+    const v=splitL(l,sep);const o={};
+    hdr.forEach((h,i)=>o[h]=(v[i]||'').trim().replace(/^"+|"+$/g,'').trim());
+    return o;
+  }).filter(o=>Object.values(o).some(v=>v));
+}
+function findCol(obj,cands){
+  const keys=Object.keys(obj);
+  const norm=s=>s.toLowerCase().replace(/[áàãâ]/g,'a').replace(/[éèê]/g,'e').replace(/[íì]/g,'i').replace(/[óòõô]/g,'o').replace(/[úù]/g,'u').replace(/ç/g,'c');
+  for(const c of cands){const nc=norm(c);const found=keys.find(k=>norm(k)===nc);if(found)return found;}
+  for(const c of cands){const nc=norm(c);const found=keys.find(k=>norm(k).includes(nc));if(found)return found;}
+  return null;
+}
+function recalc(d){
+  d.estoque_total=d.estoque_loja+d.estoque_exp;
+  if(d.saidas_4m>0){const g=d.saidas_4m/120;d.duracao=g>0?parseFloat((d.estoque_total/g).toFixed(1)):0;}
+  else{d.duracao=d.estoque_total>0?9999:0;}
+}
+
+// ─── NAV ──────────────────────────────────────────────────────────────────────
+function switchView(v,el){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.h-tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  if(el)el.classList.add('active');
+  if(v==='dashboard')renderDash();
+  if(v==='tabela')renderTable();
+  if(v==='executivo')renderExec();
+}
+
+// ─── EXECUTIVO ────────────────────────────────────────────────────────────────
+function renderExec(){
+  // Tabela fornecedores
+  const fmap={};
+  dados.forEach(d=>{
+    if(!fmap[d.fornecedor])fmap[d.fornecedor]={u:0,a:0,ok:0,c30:0};
+    const s=st(d);
+    if(s==='urgente'){fmap[d.fornecedor].u++;fmap[d.fornecedor].c30+=compra(d,30);}
+    else if(s==='atencao'){fmap[d.fornecedor].a++;fmap[d.fornecedor].c30+=compra(d,30);}
+    else if(s==='ok')fmap[d.fornecedor].ok++;
+  });
+  const tbody=document.getElementById('forn-table-exec');
+  tbody.innerHTML='';
+  const fns=Object.entries(fmap).sort((a,b)=>(b[1].u*100+b[1].a*10)-(a[1].u*100+a[1].a*10));
+  fns.forEach(([fn,v])=>{
+    const prio=v.u>0?'<span style="background:var(--red-bg);color:var(--red);font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:.08em;">URGENTE</span>':
+               v.a>0?'<span style="background:var(--yellow-bg);color:var(--yellow);font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:.08em;">ATENÇÃO</span>':
+               '<span style="background:var(--green-bg);color:var(--green);font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:.08em;">OK</span>';
+    const tr=document.createElement('tr');
+    tr.style.cssText='cursor:pointer;';
+    tr.onclick=()=>verForn(fn);
+    tr.innerHTML=`<td style="padding:9px 14px;font-size:13px;font-weight:700;color:var(--primary);">${fn}</td>
+      <td style="padding:9px 14px;text-align:center;font-size:14px;font-weight:700;color:var(--red);">${v.u||'—'}</td>
+      <td style="padding:9px 14px;text-align:center;font-size:14px;font-weight:700;color:var(--yellow);">${v.a||'—'}</td>
+      <td style="padding:9px 14px;text-align:center;font-size:13px;color:var(--green);">${v.ok||'—'}</td>
+      <td style="padding:9px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--primary);">${v.c30>0?fmt(v.c30):'—'}</td>
+      <td style="padding:9px 14px;text-align:center;">${prio}</td>`;
+    tr.style.borderBottom='1px solid var(--border)';
+    tbody.appendChild(tr);
+  });
+
+  // Listas urgentes e atenção
+  const urgList=dados.filter(d=>st(d)==='urgente').sort((a,b)=>a.duracao-b.duracao).slice(0,15);
+  const ateList=dados.filter(d=>st(d)==='atencao').sort((a,b)=>a.duracao-b.duracao).slice(0,15);
+
+  function mkCard(d,tipo){
+    const c=compra(d,30);
+    const colStr=tipo==='urgente'?'var(--red)':'var(--yellow)';
+    const bgStr=tipo==='urgente'?'var(--red-bg)':'var(--yellow-bg)';
+    const dur=d.duracao>=9999?'+999d':(d.duracao===0?'0d':fmtD(d.duracao)+'d');
+    return `<div style="background:var(--card);border:1.5px solid var(--border);border-left:3px solid ${colStr};border-radius:6px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;cursor:pointer;" onclick="verForn('${d.fornecedor}')">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--ink);line-height:1.3;">${d.produto.length>52?d.produto.slice(0,52)+'…':d.produto}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;">${d.sku} · ${d.fornecedor}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:13px;font-weight:700;color:${colStr};font-family:'DM Mono',monospace;">${dur}</div>
+        <div style="font-size:10px;color:var(--primary);font-family:'DM Mono',monospace;font-weight:700;">${c>0?fmt(c)+' un':'—'}</div>
+      </div>
+    </div>`;
+  }
+  document.getElementById('exec-urgentes').innerHTML=urgList.map(d=>mkCard(d,'urgente')).join('');
+  document.getElementById('exec-atencao').innerHTML=ateList.map(d=>mkCard(d,'atencao')).join('');
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function toggleDF(el){
+  const f=el.dataset.df;
+  if(dashFiltros.has(f)){dashFiltros.delete(f);el.classList.remove('active');}
+  else{dashFiltros.add(f);el.classList.add('active');}
+  renderDash();
+}
+function renderDash(){
+  const prazo=parseInt(document.getElementById('dash-prazo').value);
+  const ativos=dados.filter(d=>d.saidas_4m>0);
+  const urg=ativos.filter(d=>st(d)==='urgente'),ate=ativos.filter(d=>st(d)==='atencao'),ok2=ativos.filter(d=>st(d)==='ok');
+  document.getElementById('d-su').textContent=urg.length;
+  document.getElementById('d-sa').textContent=ate.length;
+  document.getElementById('d-so').textContent=ok2.length;
+  document.getElementById('d-sf').textContent=new Set([...urg,...ate].map(d=>d.fornecedor)).size;
+
+  const fmap={};
+  dados.forEach(d=>{
+    const s=st(d);
+    if(!dashFiltros.has(s)||s==='inativo')return;
+    if(!fmap[d.fornecedor])fmap[d.fornecedor]=[];
+    fmap[d.fornecedor].push(d);
+  });
+
+  const grid=document.getElementById('forn-grid');
+  grid.innerHTML='';
+  const fns=Object.keys(fmap).sort((a,b)=>{
+    const sa=fmap[a].filter(d=>st(d)==='urgente').length*100+fmap[a].filter(d=>st(d)==='atencao').length*10;
+    const sb=fmap[b].filter(d=>st(d)==='urgente').length*100+fmap[b].filter(d=>st(d)==='atencao').length*10;
+    return sb-sa||a.localeCompare(b);
+  });
+
+  if(!fns.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><strong>Nenhum item nos filtros</strong></div>';return;}
+
+  fns.forEach(fn=>{
+    const items=fmap[fn].sort((a,b)=>{
+      const ord={urgente:0,atencao:1,ok:2};
+      const diff=ord[st(a)]-ord[st(b)];
+      return diff||((a.duracao||0)-(b.duracao||0));
+    });
+    const nu=items.filter(d=>st(d)==='urgente').length,na=items.filter(d=>st(d)==='atencao').length,no=items.filter(d=>st(d)==='ok').length;
+    let cc='forn-card'; if(nu>0)cc+=' has-urgente';else if(na>0)cc+=' has-atencao';else cc+=' all-ok';
+    const show=items.slice(0,6),hid=items.length-6;
+    const ihtml=show.map(d=>{
+      const s=st(d),c2=col(d),p=pct(d),cv=compra(d,prazo);
+      const dv=d.duracao>=9999?'+999d':d.duracao===0?'0d':fmtD(d.duracao)+'d';
+      return `<div class="forn-item"><div><div class="fi-nome">${d.produto.length>44?d.produto.slice(0,44)+'…':d.produto}</div><div class="fi-sku">${d.sku}</div></div>
+        <div class="fi-dur"><span class="fi-dur-val ${c2}">${dv}</span><div class="fi-bar-bg"><div class="fi-bar-fill ${c2}" style="width:${p}%"></div></div></div>
+        <div class="fi-compra"><div class="fi-cv">${cv>0?fmt(cv):'—'}</div><div class="fi-cl">Comprar ${prazo}d</div></div></div>`;
+    }).join('');
+    const bh=[nu>0?`<span class="fb u">▲${nu}</span>`:'',na>0?`<span class="fb a">●${na}</span>`:'',no>0?`<span class="fb o">✓${no}</span>`:''].join('');
+    const card=document.createElement('div');
+    card.className=cc;
+    card.innerHTML=`<div class="forn-header"><div class="forn-name">${fn}</div><div class="forn-badges">${bh}</div></div>
+      <div class="forn-items">${ihtml}</div>
+      ${hid>0?`<div class="forn-more" onclick="verForn('${fn}')">+ ${hid} item${hid>1?'s':''} — ver todos →</div>`:''}`;
+    grid.appendChild(card);
+  });
+}
+
+function verForn(fn){
+  switchView('tabela',document.querySelectorAll('.h-tab')[2]);
+  filtrosAtivos=new Set(['urgente','atencao','ok','inativo']);
+  document.querySelectorAll('.chip[data-filter]').forEach(c=>c.classList.add('active'));
+  document.getElementById('fsel').value=fn;
+  document.getElementById('search').value='';
+  renderTable();
+}
+
+// ─── TABELA ──────────────────────────────────────────────────────────────────
+function toggleFilter(el){
+  const f=el.dataset.filter;
+  if(filtrosAtivos.has(f)){filtrosAtivos.delete(f);el.classList.remove('active');}
+  else{filtrosAtivos.add(f);el.classList.add('active');}
+  renderTable();
+}
+function setPrazo(p,el){
+  document.querySelectorAll('.prov-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');prazoAtivo=p;
+  document.getElementById('col-compra').textContent='Compra '+p+'d';
+  renderTable();
+}
+function sortBy(f){if(sortField===f)sortDir*=-1;else{sortField=f;sortDir=1;}renderTable();}
+function renderTable(){
+  const q=document.getElementById('search').value.toLowerCase().trim();
+  fforn=document.getElementById('fsel').value;
+  let fil=dados.filter(d=>{
+    if(!filtrosAtivos.has(st(d)))return false;
+    if(fforn&&d.fornecedor!==fforn)return false;
+    if(q&&!d.produto.toLowerCase().includes(q)&&!d.sku.toLowerCase().includes(q)&&!d.fornecedor.toLowerCase().includes(q))return false;
+    return true;
+  });
+  fil.sort((a,b)=>{
+    if(sortField==='compra')return sortDir*(compra(a,prazoAtivo)-compra(b,prazoAtivo));
+    if(sortField==='status'){const ord={urgente:0,atencao:1,ok:2,inativo:3};return sortDir*(ord[st(a)]-ord[st(b)]);}
+    let va=a[sortField],vb=b[sortField];
+    if(typeof va==='string')return sortDir*va.localeCompare(vb);
+    return sortDir*((va||0)-(vb||0));
+  });
+  const all=dados.filter(d=>d.saidas_4m>0);
+  const u=all.filter(d=>st(d)==='urgente'),at=all.filter(d=>st(d)==='atencao'),ok3=all.filter(d=>st(d)==='ok');
+  document.getElementById('su').textContent=u.length;
+  document.getElementById('sa').textContent=at.length;
+  document.getElementById('so').textContent=ok3.length;
+  document.getElementById('sf').textContent=new Set(u.map(d=>d.fornecedor)).size;
+  const tbody=document.getElementById('tbody');tbody.innerHTML='';
+  if(!fil.length){document.getElementById('empty').style.display='block';document.getElementById('main-table').style.display='none';return;}
+  document.getElementById('empty').style.display='none';document.getElementById('main-table').style.display='table';
+  fil.forEach(d=>{
+    const s=st(d),cv=compra(d,prazoAtivo),slbl={urgente:'URGENTE',atencao:'ATENÇÃO',ok:'OK',inativo:'SEM MOV.'}[s];
+    const p=pct(d),c2=col(d);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span class="ftag" style="cursor:pointer" title="Clique para editar fornecedor" onclick="editarFornecedor('${d.sku.replace(/'/g,"\\'")}',this)">${d.fornecedor}</span></td>
+      <td class="pnome">${d.produto}</td>
+      <td class="mono">${d.sku}</td>
+      <td class="nr">${fmt(d.estoque_loja)}</td>
+      <td class="nr">${fmt(d.estoque_exp)}</td>
+      <td class="nr"><strong>${fmt(d.estoque_total)}</strong></td>
+      <td class="nr">${fmt(d.saidas_4m)}</td>
+      <td><div class="dur-wrap"><div class="dur-bg"><div class="dur-fill ${c2}" style="width:${p}%"></div></div><span class="dur-v">${fmtD(d.duracao)}d</span></div></td>
+      <td class="nr"><span class="cc">${cv>0?fmt(cv):'—'}</span></td>
+      <td><span class="badge ${s}">${slbl}</span></td>
+      <td style="text-align:center;padding:0 4px;"><button onclick="deletarItem('${d.sku.replace(/'/g,"\\'")}',event)" title="Remover item" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1;padding:2px 5px;border-radius:3px;transition:color .15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--muted)'">×</button></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('hdate').textContent='Atualizado: '+new Date().toLocaleTimeString('pt-BR');
+}
+function soUrgentes(){filtrosAtivos=new Set(['urgente','atencao']);document.querySelectorAll('.chip[data-filter]').forEach(c=>c.classList.toggle('active',filtrosAtivos.has(c.dataset.filter)));renderTable();}
+function agrupar(){sortField='fornecedor';sortDir=1;renderTable();}
+function deletarItem(sku,e){
+  e.stopPropagation();
+  const idx=dados.findIndex(d=>d.sku===sku);
+  if(idx===-1)return;
+  const nome=dados[idx].produto;
+  if(!confirm('Remover "'+nome+'" ('+sku+') da lista?'))return;
+  dados.splice(idx,1);
+  populateForn();renderTable();renderDash();renderExec();
+  salvarDados('Item removido');
+  showToast('Removido: '+sku,true);
+}
+function editarFornecedor(sku,el){
+  const d=dados.find(x=>x.sku===sku);if(!d)return;
+  let dl=document.getElementById('forn-datalist');
+  if(!dl){dl=document.createElement('datalist');dl.id='forn-datalist';document.body.appendChild(dl);}
+  dl.innerHTML=[...new Set(dados.map(x=>x.fornecedor))].sort().map(f=>`<option value="${f}">`).join('');
+  const inp=document.createElement('input');
+  inp.type='text';inp.value=d.fornecedor;inp.setAttribute('list','forn-datalist');
+  inp.style.cssText='font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;border:1.5px solid var(--accent,#6c63ff);background:var(--bg2,#1a1a2e);color:var(--primary,#e0e0e0);width:130px;outline:none;';
+  el.replaceWith(inp);inp.focus();inp.select();
+  let confirmado=false;
+  function confirmar(){
+    if(confirmado)return;confirmado=true;
+    const novo=(inp.value||'').trim().toUpperCase();
+    if(novo&&novo!==d.fornecedor){
+      d.fornecedor=novo;
+      populateForn();renderTable();renderDash();renderExec();
+      salvarDados('Fornecedor editado');
+      showToast('Fornecedor atualizado: '+novo,true);
+    }else{renderTable();}
+  }
+  inp.addEventListener('blur',confirmar);
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){inp.blur();}
+    if(e.key==='Escape'){confirmado=true;renderTable();}
+  });
+}
+function resetF(){filtrosAtivos=new Set(['urgente','atencao','ok','inativo']);document.querySelectorAll('.chip[data-filter]').forEach(c=>c.classList.add('active'));document.getElementById('search').value='';document.getElementById('fsel').value='';renderTable();}
+
+// ─── EXPORT CSV ───────────────────────────────────────────────────────────────
+function exportarCSVPorFornecedor(){
+  const prazo=parseInt(document.getElementById('dash-prazo')?.value||prazoAtivo);
+  const lista=dados.filter(d=>d.saidas_4m>0&&compra(d,prazo)>0)
+    .sort((a,b)=>a.fornecedor!==b.fornecedor?a.fornecedor.localeCompare(b.fornecedor):(a.duracao||0)-(b.duracao||0));
+  if(!lista.length){showToast('Nenhum item para compra.');return;}
+  const SEP=';',BOM='\uFEFF';
+  const rows=[['Fornecedor','SKU','Produto','Un.','Est. Loja','Est. Exp.','Total','Saídas 4M','Duração (dias)','Compra '+prazo+'d','Status'].join(SEP)];
+  let fnAtual=null;
+  lista.forEach(d=>{
+    if(d.fornecedor!==fnAtual){if(fnAtual!==null)rows.push('');fnAtual=d.fornecedor;}
+    const s=st(d),slbl={urgente:'URGENTE',atencao:'ATENÇÃO',ok:'OK'}[s]||'';
+    rows.push([d.fornecedor,d.sku,`"${d.produto}"`,d.un,Math.round(d.estoque_loja),Math.round(d.estoque_exp),Math.round(d.estoque_total),Math.round(d.saidas_4m),d.duracao>=9999?'>999':Math.round(d.duracao),compra(d,prazo),slbl].join(SEP));
+  });
+  rows.push('');rows.push('=== RESUMO POR FORNECEDOR ===');
+  rows.push(['Fornecedor','Itens','Urgentes','Atenção','Total a Comprar (un)'].join(SEP));
+  const res={};lista.forEach(d=>{if(!res[d.fornecedor])res[d.fornecedor]={n:0,u:0,a:0,c:0};res[d.fornecedor].n++;const s=st(d);if(s==='urgente')res[d.fornecedor].u++;if(s==='atencao')res[d.fornecedor].a++;res[d.fornecedor].c+=compra(d,prazo);});
+  Object.entries(res).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([f,v])=>rows.push([f,v.n,v.u,v.a,v.c].join(SEP)));
+  const blob=new Blob([BOM+rows.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`lista_compra_${prazo}d_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
+  a.click();showToast(`${lista.length} itens exportados em ${Object.keys(res).length} fornecedores.`,true);
+}
+
+// ─── UPLOADS BLING ────────────────────────────────────────────────────────────
+function uploadEst(input,num){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const rows=csv2obj(e.target.result);
+    if(!rows.length){showToast('Arquivo vazio ou inválido.');return;}
+    const first=rows[0];
+    const cs=findCol(first,['codigo','sku','cod','id','referencia','code']);
+    const cq=findCol(first,['quantidade','qtd','saldo','estoque','qty']);
+    if(!cs||!cq){showToast('Colunas não encontradas. Exportar "Saldos em Estoque" do Bling.');input.value='';return;}
+    const map={};rows.forEach(row=>{if(row[cs])map[normSku(row[cs])]=parseBR(row[cq]);});
+    let n=0;dados.forEach(d=>{const k=normSku(d.sku);if(map[k]!==undefined){if(num===1)d.estoque_loja=map[k];else d.estoque_exp=Math.max(0,map[k]);recalc(d);n++;}});
+    const lbl=num===1?'Loja':'Expedição';
+    document.getElementById('st-e'+num).textContent='✓ '+n+' SKUs · '+file.name;
+    document.getElementById('st-e'+num).className='upload-status ok';
+    renderTable();renderDash();renderExec();
+    salvarDados('Estoque '+lbl);
+    showToast('Estoque '+lbl+': '+n+' SKUs atualizados e salvos.',true);input.value='';
+  };r.readAsText(file,'UTF-8');
+}
+function uploadSai(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const rows=csv2obj(e.target.result);
+    if(!rows.length){showToast('Arquivo vazio ou inválido.');return;}
+    const first=rows[0];
+    const cs=findCol(first,['codigo','sku','cod','id','referencia','code']);
+    const cx=findCol(first,['saidas','saida','vendas','qtd','sold','output']);
+    if(!cs||!cx){showToast('Colunas não encontradas. Exportar "Entradas e Saídas" do Bling.');input.value='';return;}
+    const map={};rows.forEach(row=>{if(!row[cs])return;const s4m=parseBR(row[cx]);map[normSku(row[cs])]={saidas_4m:s4m,media_30:+(s4m/4).toFixed(2),media_60:+(s4m/2).toFixed(2),media_90:+(s4m*.75).toFixed(2),media_120:+s4m.toFixed(2)};});
+    let n=0;dados.forEach(d=>{const k=normSku(d.sku);if(map[k]){Object.assign(d,map[k]);recalc(d);n++;}});
+    document.getElementById('st-s').textContent='✓ '+n+' SKUs · '+file.name;
+    document.getElementById('st-s').className='upload-status ok';
+    renderTable();renderDash();renderExec();
+    salvarDados('Saídas de Venda');
+    showToast('Saídas: '+n+' SKUs atualizados e salvos.',true);input.value='';
+  };r.readAsText(file,'UTF-8');
+}
+
+// ─── BASE ─────────────────────────────────────────────────────────────────────
+function importBase(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const rows=csv2obj(e.target.result);
+    const prods=extrairBase(rows);
+    if(!prods.length){showToast('Arquivo inválido.');input.value='';return;}
+    pendingBase=prods;
+    const fns=[...new Set(prods.map(p=>p.fornecedor))].sort();
+    const comEstoque=prods.filter(p=>p.estoque_loja>0).length;
+    const semForn=prods.filter(p=>p.fornecedor==='SEM FORNECEDOR').length;
+    document.getElementById('mstats').innerHTML='<p>SKUs encontrados: <strong>'+prods.length+'</strong></p><p>Fornecedores: <strong>'+fns.length+'</strong></p><p>Com saldo em estoque: <strong>'+comEstoque+'</strong></p>'+(semForn>0?'<p style="color:var(--yellow)">Sem fornecedor cadastrado: <strong>'+semForn+'</strong></p>':'')+'<p>Arquivo: <strong>'+file.name+'</strong></p>';
+    document.getElementById('modal').classList.add('show');
+  };r.readAsText(file,'UTF-8');input.value='';
+}
+function extrairBase(rows){
+  const seen=new Set(),prods=[];
+  if(!rows.length)return prods;
+  const first=rows[0];
+  const kS=findCol(first,['codigo','sku','cod','id','referencia','code']);
+  const kP=findCol(first,['descricao','descri','produto','description','nome','name']);
+  const kF=findCol(first,['fornecedor','supplier','vendor','forn']);
+  const kU=findCol(first,['unidade','un','unit','und']);
+  const kE=findCol(first,['estoque','quantidade','qtd','saldo','qty']);
+  if(!kS||!kP)return prods;
+  rows.forEach(row=>{
+    const sku=(row[kS]||'').trim(),prod=(row[kP]||'').trim();
+    if(!sku||!prod)return;
+    const forn=kF?(row[kF]||'').trim():'';
+    const un=kU?((row[kU]||'UN').trim()||'UN'):'UN';
+    const estoque=kE?parseBR(row[kE]):0;
+    const sn=normSku(sku);if(seen.has(sn))return;seen.add(sn);
+    prods.push({sku,fornecedor:normForn(forn||'SEM FORNECEDOR'),produto:prod,un,
+      estoque_loja:estoque,estoque_exp:0,estoque_total:estoque,
+      saidas_4m:0,media_30:0,media_60:0,media_90:0,media_120:0,
+      duracao:estoque>0?9999:0});
+  });return prods;
+}
+function confirmBase(){
+  if(!pendingBase)return;
+  const old={};dados.forEach(d=>{old[normSku(d.sku)]=d;});
+  dados=pendingBase.map(d=>{const o=old[normSku(d.sku)];if(o){d.estoque_loja=o.estoque_loja;d.estoque_exp=o.estoque_exp;d.estoque_total=o.estoque_total;d.saidas_4m=o.saidas_4m;d.media_30=o.media_30;d.media_60=o.media_60;d.media_90=o.media_90;d.media_120=o.media_120;d.duracao=o.duracao;}return d;});
+  pendingBase=null;closeModal();populateForn();
+  filtrosAtivos=new Set(['urgente','atencao','ok','inativo']);
+  document.querySelectorAll('.chip[data-filter]').forEach(c=>c.classList.add('active'));
+  renderTable();renderDash();renderExec();
+  document.getElementById('st-b').textContent=dados.length+' SKUs carregados';
+  document.getElementById('st-b').className='upload-status ok';
+  salvarDados('Atualização de Base');
+  showToast('Base atualizada: '+dados.length+' produtos e salvos.',true);
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');pendingBase=null;}
+function populateForn(){
+  const sel=document.getElementById('fsel');
+  sel.innerHTML='<option value="">Todos</option>';
+  [...new Set(dados.map(d=>d.fornecedor))].sort().forEach(f=>{const o=document.createElement('option');o.value=f;o.textContent=f;sel.appendChild(o);});
+}
+function toggleGuia(){const g=document.getElementById('guia');g.style.display=g.style.display==='none'?'block':'none';}
+function showToast(msg,ok=false){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(ok?' success':'');setTimeout(()=>t.className='toast',3500);}
+
+
+// ─── SISTEMA DE LOGIN ─────────────────────────────────────────────────────────
+const HASH_SENHA = '90d932e5b29ce596ec54d27c8eecc95ef41a1b0e193b899da4eb1c203b73e4c5';
+const MAX_TENTATIVAS = 5;
+const BLOQUEIO_MS = 5 * 60 * 1000; // 5 minutos
+
+let tentativas = parseInt(sessionStorage.getItem('srv_tentativas') || '0');
+let bloqueadoAte = parseInt(sessionStorage.getItem('srv_bloqueado_ate') || '0');
+
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function tentarLogin() {
+  // Verificar bloqueio
+  if (Date.now() < bloqueadoAte) {
+    mostrarBloqueio();
+    return;
+  }
+
+  const input = document.getElementById('senha-input');
+  const senha = input.value;
+
+  if (!senha) {
+    input.classList.add('error');
+    input.focus();
+    return;
+  }
+
+  const hash = await sha256(senha);
+
+  if (hash === HASH_SENHA) {
+    // ACESSO CONCEDIDO
+    sessionStorage.setItem('srv_autenticado', '1');
+    sessionStorage.setItem('srv_tentativas', '0');
+    sessionStorage.setItem('srv_bloqueado_ate', '0');
+
+    const screen = document.getElementById('login-screen');
+    screen.style.transition = 'opacity .4s ease';
+    screen.style.opacity = '0';
+    setTimeout(() => { screen.style.display = 'none'; }, 400);
+    input.value = '';
+  } else {
+    // SENHA ERRADA
+    tentativas++;
+    sessionStorage.setItem('srv_tentativas', tentativas.toString());
+    input.classList.add('error');
+    input.value = '';
+
+    if (tentativas >= MAX_TENTATIVAS) {
+      bloqueadoAte = Date.now() + BLOQUEIO_MS;
+      sessionStorage.setItem('srv_bloqueado_ate', bloqueadoAte.toString());
+      mostrarBloqueio();
+    } else {
+      const restantes = MAX_TENTATIVAS - tentativas;
+      const errEl = document.getElementById('login-error');
+      const attEl = document.getElementById('login-attempts');
+      errEl.classList.add('show');
+      attEl.style.display = 'block';
+      attEl.textContent = restantes + ' tentativa' + (restantes !== 1 ? 's' : '') + ' restante' + (restantes !== 1 ? 's' : '');
+      setTimeout(() => { input.classList.remove('error'); }, 800);
+      input.focus();
+    }
+  }
+}
+
+function mostrarBloqueio() {
+  document.getElementById('login-form-area').style.display = 'none';
+  document.getElementById('login-locked-area').style.display = 'block';
+  iniciarContagem();
+}
+
+function iniciarContagem() {
+  function atualizar() {
+    const restante = bloqueadoAte - Date.now();
+    if (restante <= 0) {
+      tentativas = 0;
+      sessionStorage.setItem('srv_tentativas', '0');
+      sessionStorage.setItem('srv_bloqueado_ate', '0');
+      document.getElementById('login-form-area').style.display = 'block';
+      document.getElementById('login-locked-area').style.display = 'none';
+      document.getElementById('login-error').classList.remove('show');
+      document.getElementById('login-attempts').style.display = 'none';
+      document.getElementById('senha-input').focus();
+      return;
+    }
+    const min = Math.floor(restante / 60000);
+    const seg = Math.floor((restante % 60000) / 1000);
+    document.getElementById('countdown').textContent =
+      min.toString().padStart(2,'0') + ':' + seg.toString().padStart(2,'0');
+    setTimeout(atualizar, 1000);
+  }
+  atualizar();
+}
+
+// Verificar estado ao carregar
+(function inicializarLogin() {
+  // 2ª senha (SRVGas2025@) REMOVIDA — acesso somente pelo overlay 1234.
+  const el = document.getElementById('login-screen'); if (el) el.remove();
+})();
+
+
+// ─── PERSISTÊNCIA — FILE SYSTEM ACCESS API (SharePoint via Skybox) ────────────
+
+let _fileHandle = null;
+
+// ── IndexedDB para manter o handle entre reloads ──────────────────────────────
+const _IDB = 'srvgas_fs', _IDB_STORE = 'handles';
+function _idbOpen() {
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open(_IDB,1);
+    req.onupgradeneeded=e=>e.target.result.createObjectStore(_IDB_STORE);
+    req.onsuccess=e=>res(e.target.result);
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+async function _idbGet(k){const db=await _idbOpen();return new Promise((res,rej)=>{const tx=db.transaction(_IDB_STORE,'readonly');const r=tx.objectStore(_IDB_STORE).get(k);r.onsuccess=e=>res(e.target.result);r.onerror=e=>rej(e.target.error);});}
+async function _idbSet(k,v){const db=await _idbOpen();return new Promise((res,rej)=>{const tx=db.transaction(_IDB_STORE,'readwrite');tx.objectStore(_IDB_STORE).put(v,k);tx.oncomplete=()=>res();tx.onerror=e=>rej(e.target.error);});}
+async function _idbDel(k){const db=await _idbOpen();return new Promise((res,rej)=>{const tx=db.transaction(_IDB_STORE,'readwrite');tx.objectStore(_IDB_STORE).delete(k);tx.oncomplete=()=>res();tx.onerror=e=>rej(e.target.error);});}
+
+// ── Permissão de arquivo ──────────────────────────────────────────────────────
+async function _getPermissao(handle, modo='readwrite') {
+  const opts={mode:modo};
+  if(await handle.queryPermission(opts)==='granted') return true;
+  try { if(await handle.requestPermission(opts)==='granted') return true; } catch(e){}
+  return false;
+}
+
+// ── Abrir arquivo existente (Skybox\ESTOQUE) ──────────────────────────────────
+async function conectarArquivoSharePoint() {
+  if(!window.showOpenFilePicker){showToast('Use Chrome ou Edge para esta função.');return;}
+  try {
+    const [handle]=await window.showOpenFilePicker({
+      types:[{description:'Dados SRV GÁS',accept:{'application/json':['.json']}}],
+      excludeAcceptAllOption:false,multiple:false
+    });
+    _fileHandle=handle;
+    await _idbSet('srvgas_fh',handle);
+    const carregou=await carregarDoArquivo();
+    if(carregou){
+      populateForn();renderExec();renderDash();renderTable();
+      showToast('Conectado: '+handle.name,true);
+    } else {
+      await salvarDados('Conexão inicial');
+      showToast('Arquivo conectado. Dados da base salvos.',true);
+    }
+    _atualizarBtnConectar(true,handle.name);
+  } catch(e){if(e.name!=='AbortError')showToast('Erro ao abrir arquivo: '+e.message);}
+}
+
+// ── Criar novo arquivo de dados na pasta Skybox ───────────────────────────────
+async function criarArquivoSharePoint() {
+  if(!window.showSaveFilePicker){showToast('Use Chrome ou Edge para esta função.');return;}
+  try {
+    const handle=await window.showSaveFilePicker({
+      suggestedName:'SRV GAS SHAREPOINT OFC.json',
+      types:[{description:'Dados SRV GÁS',accept:{'application/json':['.json']}}]
+    });
+    _fileHandle=handle;
+    await _idbSet('srvgas_fh',handle);
+    await salvarDados('Arquivo criado');
+    _atualizarBtnConectar(true,handle.name);
+    showToast('Arquivo criado: '+handle.name,true);
+  } catch(e){if(e.name!=='AbortError')showToast('Erro ao criar arquivo: '+e.message);}
+}
+
+// ── Reconectar após reload (requer gesto do usuário para pedir permissão) ─────
+async function reconectarArquivo() {
+  if(!_fileHandle){conectarArquivoSharePoint();return;}
+  try {
+    const ok=await _getPermissao(_fileHandle);
+    if(ok){
+      const carregou=await carregarDoArquivo();
+      if(carregou){populateForn();renderExec();renderDash();renderTable();}
+      _atualizarBtnConectar(true,_fileHandle.name);
+      const btn=document.getElementById('btn-reconectar');
+      if(btn) btn.style.display='none';
+    } else {
+      showToast('Permissão negada. Conecte o arquivo manualmente.');
+    }
+  } catch(e){showToast('Erro ao reconectar: '+e.message);}
+}
+
+// ── Ler dados do arquivo ──────────────────────────────────────────────────────
+async function carregarDoArquivo() {
+  if(!_fileHandle) return false;
+  try {
+    const ok=await _getPermissao(_fileHandle,'read');
+    if(!ok) return false;
+    const file=await _fileHandle.getFile();
+    const text=await file.text();
+    if(!text.trim()) return false;
+    const parsed=JSON.parse(text);
+    const snapshot=parsed.dados||parsed;
+    if(!Array.isArray(snapshot)||!snapshot.length) return false;
+    _aplicarSnapshot(snapshot);
+    if(parsed.meta) atualizarBarraPersist(parsed.meta,true);
+    return true;
+  } catch(e){
+    console.warn('Erro ao ler arquivo:',e);
+    _fileHandle=null;
+    await _idbDel('srvgas_fh');
+    return false;
+  }
+}
+
+// ── Salvar dados no arquivo (fallback: localStorage) ─────────────────────────
+async function salvarDados(origem) {
+  const snapshot=dados.map(d=>({
+    sku:d.sku,fornecedor:d.fornecedor||'',produto:d.produto||'',un:d.un||'UN',
+    estoque_loja:d.estoque_loja,estoque_exp:d.estoque_exp,
+    estoque_total:d.estoque_total,saidas_4m:d.saidas_4m,
+    media_30:d.media_30,media_60:d.media_60,media_90:d.media_90,
+    media_120:d.media_120,duracao:d.duracao
+  }));
+  const meta={
+    origem,data:new Date().toLocaleString('pt-BR'),total:dados.length,
+    urgentes:dados.filter(d=>getStatusLS(d)==='urgente').length,
+    atencao:dados.filter(d=>getStatusLS(d)==='atencao').length
+  };
+  if(_fileHandle){
+    try {
+      const ok=await _getPermissao(_fileHandle);
+      if(!ok) throw new Error('Permissão negada');
+      const writable=await _fileHandle.createWritable();
+      await writable.write(JSON.stringify({meta,dados:snapshot},null,2));
+      await writable.close();
+      atualizarBarraPersist(meta);
+      return;
+    } catch(e){showToast('Erro ao salvar no arquivo: '+e.message);}
+  }
+  // Fallback: localStorage (sem arquivo conectado)
+  try {
+    localStorage.setItem('srvgas_dados_v1',JSON.stringify(snapshot));
+    localStorage.setItem('srvgas_meta_v1',JSON.stringify(meta));
+    atualizarBarraPersist(meta);
+    _mostrarAvisoSemArquivo();
+  } catch(e){showToast('Aviso: não foi possível salvar. '+e.message);}
+}
+
+// ── Aplicar snapshot sobre dados[] ───────────────────────────────────────────
+function _aplicarSnapshot(snapshot) {
+  // Se o snapshot tem fornecedor/produto, substituir dados[] completamente
+  if(snapshot[0] && snapshot[0].fornecedor !== undefined) {
+    dados = snapshot.map(s=>{
+      const s4m = s.saidas_4m||0;
+      return {
+        sku:s.sku, fornecedor:s.fornecedor||'', produto:s.produto||'', un:s.un||'UN',
+        estoque_loja:s.estoque_loja||0, estoque_exp:s.estoque_exp||0,
+        estoque_total:s.estoque_total||0, saidas_4m:s4m,
+        media_30: s.media_30 ?? +(s4m/4).toFixed(2),
+        media_60: s.media_60 ?? +(s4m/2).toFixed(2),
+        media_90: s.media_90 ?? +(s4m*.75).toFixed(2),
+        media_120:s.media_120 ?? +s4m.toFixed(2),
+        duracao:  s.duracao||0
+      };
+    });
+    return;
+  }
+  // Fallback: overlay sobre BASE_DATA (formato antigo sem fornecedor)
+  const map={};
+  snapshot.forEach(s=>{map[normSku(s.sku)]=s;});
+  dados.forEach(d=>{
+    const s=map[normSku(d.sku)];
+    if(!s) return;
+    d.estoque_loja=s.estoque_loja;d.estoque_exp=s.estoque_exp;
+    d.estoque_total=s.estoque_total;d.saidas_4m=s.saidas_4m;
+    d.media_30=s.media_30;d.media_60=s.media_60;
+    d.media_90=s.media_90;d.media_120=s.media_120;d.duracao=s.duracao;
+  });
+}
+
+function getStatusLS(d) {
+  if(d.saidas_4m===0) return 'inativo';
+  if(d.duracao===0||d.duracao<15) return 'urgente';
+  if(d.duracao<45) return 'atencao';
+  return 'ok';
+}
+
+function atualizarBarraPersist(meta,restaurando=false) {
+  const bar=document.getElementById('persist-bar');
+  const msg=document.getElementById('persist-msg');
+  bar.classList.add('show');bar.classList.remove('warn');
+  const modo=_fileHandle?'📁 '+_fileHandle.name:'cache local';
+  msg.textContent=(restaurando?'Carregado':'Salvo')+' · '+meta.data+' · '+meta.urgentes+' urgente(s) · '+modo;
+}
+
+function _mostrarAvisoSemArquivo() {
+  const bar=document.getElementById('persist-bar');
+  const msg=document.getElementById('persist-msg');
+  bar.classList.add('show','warn');
+  msg.textContent='⚠ SharePoint não conectado — dados salvos só neste dispositivo. Clique em "☁ Conectar SharePoint" acima.';
+}
+
+function _atualizarBtnConectar(conectado,nome='') {
+  const b=document.getElementById('btn-conectar');
+  if(!b) return;
+  if(conectado){b.textContent='✓ '+nome;b.style.background='rgba(14,124,74,.85)';b.style.color='#fff';}
+  else{b.textContent='☁ Conectar SharePoint';b.style.background='';b.style.color='';}
+}
+
+async function resetarDados() {
+  if(!confirm('Restaurar os dados originais da base (Dez/2025–Mar/2026)?\nOs uploads de estoque e saídas serão perdidos.')) return;
+  dados=BASE_DATA.map(d=>({...d}));
+  if(_fileHandle){ await salvarDados('Base restaurada'); }
+  else { localStorage.removeItem('srvgas_dados_v1');localStorage.removeItem('srvgas_meta_v1'); }
+  populateForn();renderExec();renderDash();renderTable();
+  ['st-e1','st-e2','st-s'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.textContent='Não carregado';el.className='upload-status';}
+  });
+  document.getElementById('persist-bar').classList.remove('show');
+  showToast('Base original restaurada.',false);
+}
+
+// ── Init da persistência ──────────────────────────────────────────────────────
+async function restaurarDados() {
+  // 1. Tentar handle salvo no IndexedDB
+  try {
+    const handle=await _idbGet('srvgas_fh');
+    if(handle){
+      _fileHandle=handle;
+      const perm=await handle.queryPermission({mode:'readwrite'});
+      if(perm==='granted'){
+        const ok=await carregarDoArquivo();
+        if(ok){populateForn();renderExec();renderDash();renderTable();return;}
+      } else {
+        // Precisa de gesto do usuário — mostrar botão de reconexão
+        const bar=document.getElementById('persist-bar');
+        const msg=document.getElementById('persist-msg');
+        const btn=document.getElementById('btn-reconectar');
+        bar.classList.add('show','warn');
+        msg.textContent='⚠ Arquivo detectado ('+handle.name+') — clique em "⟳ Reconectar" para carregar os dados';
+        if(btn) btn.style.display='';
+        renderExec();renderDash();renderTable();
+        return;
+      }
+    }
+  } catch(e){console.warn('IDB error:',e);}
+
+  // 2. Fallback: dados legados no localStorage
+  try {
+    const raw=localStorage.getItem('srvgas_dados_v1');
+    if(raw){
+      _aplicarSnapshot(JSON.parse(raw));
+      populateForn();renderExec();renderDash();renderTable();
+      const metaStr=localStorage.getItem('srvgas_meta_v1');
+      const meta=metaStr?JSON.parse(metaStr):null;
+      _mostrarAvisoSemArquivo();
+      if(meta){
+        const msg=document.getElementById('persist-msg');
+        msg.textContent='⚠ Cache local · '+meta.data+' · Conecte o arquivo SharePoint para sincronizar';
+      }
+      return;
+    }
+  } catch(e){console.warn('localStorage error:',e);}
+
+  // 3. Sem dados salvos
+  _mostrarAvisoSemArquivo();
+  renderExec();renderDash();renderTable();
+}
+
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById('hdate').textContent='v1.0 · '+new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+populateForn();
+// ECOSSISTEMA: prioriza a base central do Bling (window.BASE_ESTOQUE); senão, fluxo original.
+if(window.BASE_ESTOQUE && Array.isArray(window.BASE_ESTOQUE.dados) && window.BASE_ESTOQUE.dados.length){
+  try{
+    // indicadores só de produtos SIMPLES (kits têm estoque virtual derivado dos componentes)
+    const _src=window.BASE_ESTOQUE.dados, _simp=_src.filter(d=>d.formato==='S');
+    _aplicarSnapshot(_simp.length ? _simp : _src);
+    populateForn();renderExec();renderDash();renderTable();
+    const _m=window.BASE_ESTOQUE.meta||{};
+    const _b=document.getElementById('persist-msg');
+    if(_b){_b.textContent='🔄 Base Bling · '+(_m.data||'')+' · '+(_m.total||0)+' itens';
+      const _bar=document.getElementById('persist-bar'); if(_bar)_bar.classList.add('show');}
+  }catch(e){console.error('Falha ao aplicar BASE_ESTOQUE:',e);restaurarDados();}
+} else {
+  restaurarDados(); // fallback: arquivo SharePoint / localStorage
+}
+</script>
+</body>
+</html>

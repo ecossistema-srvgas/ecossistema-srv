@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<!-- ECOSSISTEMA SRV — contas a pagar do Bling (gerada por _estoquista/coletar_caixa.js) -->
+<script src="../base_caixa.js"></script>
+<script src="../base_estoque.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="SRV GÁS® — Budget de Compras · Sistema Financeiro de Programação de Compras">
+<meta name="author" content="SRV GÁS®">
+<title>SRV GÁS® — Budget de Compras</title>
+<!-- ── Acesso restrito (senha) ───────────────────────────────────────────── -->
+<style id="srv-auth-style">body{visibility:hidden}html.srv-auth-ok body{visibility:visible}
+#srv-auth{position:fixed;inset:0;z-index:2147483647;background:#0D1B3E;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',Arial,sans-serif}
+#srv-auth .box{background:#fff;padding:32px 28px;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;width:280px}
+#srv-auth h2{margin:0 0 4px;color:#393E9C;font-size:20px;font-weight:700}
+#srv-auth p{margin:0 0 18px;color:#6B7BAE;font-size:13px}
+#srv-auth input{width:100%;padding:11px 12px;border:2px solid #D6E0F0;border-radius:8px;font-size:18px;text-align:center;letter-spacing:4px;box-sizing:border-box;outline:none}
+#srv-auth input:focus{border-color:#393E9C}
+#srv-auth button{width:100%;margin-top:12px;padding:11px;border:0;border-radius:8px;background:#393E9C;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+#srv-auth .err{color:#C0392B;font-size:12px;height:14px;margin-top:8px}</style>
+<script>
+(function(){
+  var SENHA='1234', KEY='srv_auth_budget';
+  function libera(){document.documentElement.classList.add('srv-auth-ok');var o=document.getElementById('srv-auth');if(o)o.remove();}
+  if(sessionStorage.getItem(KEY)==='ok'){document.addEventListener('DOMContentLoaded',libera);return;}
+  document.addEventListener('DOMContentLoaded',function(){
+    var ov=document.createElement('div');ov.id='srv-auth';
+    ov.innerHTML='<div class="box"><h2>SRV GÁS®</h2><p>Acesso restrito</p><input id="srv-auth-in" type="password" inputmode="numeric" autocomplete="off" placeholder="••••"><div class="err" id="srv-auth-err"></div><button id="srv-auth-btn">Entrar</button></div>';
+    document.documentElement.appendChild(ov);
+    var inp=document.getElementById('srv-auth-in');inp.focus();
+    function tenta(){if(inp.value===SENHA){sessionStorage.setItem(KEY,'ok');libera();}else{document.getElementById('srv-auth-err').textContent='Senha incorreta';inp.value='';inp.focus();}}
+    document.getElementById('srv-auth-btn').addEventListener('click',tenta);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter')tenta();});
+  });
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+/* ══════════════════════════════════════════════════════
+   DESIGN TOKENS — SRV GÁS® Sistema Financeiro
+══════════════════════════════════════════════════════ */
+:root {
+  --primary:      #393E9C;
+  --primary-dark: #2a2f7a;
+  --primary-light:#4a51c4;
+  --secondary:    #69BAEF;
+  --secondary-lt: #a8d8f5;
+  --ink:          #0D1B3E;
+  --bg:           #F0F4FA;
+  --card:         #FFFFFF;
+  --border:       #D6E0F0;
+  --muted:        #6B7BAE;
+  --green:        #0E7C4A;
+  --green-bg:     #E6F5EE;
+  --yellow:       #B07800;
+  --yellow-bg:    #FFF8E0;
+  --red:          #C0392B;
+  --red-bg:       #FDECEA;
+  --gray:         #8A96B0;
+  --gray-bg:      #F0F2F8;
+}
+
+/* ── BASE ── */
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+input[type=file]{display:none;}
+button{font-family:'Rajdhani',sans-serif;}
+
+/* ── HEADER ── */
+.header{
+  background:var(--primary);
+  padding:0 28px;height:58px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;
+  box-shadow:0 2px 16px rgba(57,62,156,.4);
+}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-mark{width:32px;height:32px;background:var(--secondary);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo-mark svg{color:var(--primary-dark);}
+.logo-text{color:#fff;font-size:18px;font-weight:700;letter-spacing:.06em;}
+.logo-text sup{color:var(--secondary);font-size:11px;}
+.logo-slogan{color:var(--secondary-lt);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-top:1px;}
+.header-nav{display:flex;gap:2px;align-items:center;}
+.nav-hub{padding:6px 12px;color:var(--secondary-lt,#a8d8f5);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:5px;transition:all .15s;}
+.nav-hub:hover{color:#fff;background:rgba(255,255,255,.14);}
+.h-tab{
+  padding:6px 14px;color:rgba(255,255,255,.6);
+  font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;white-space:nowrap;
+}
+.h-tab:hover{color:rgba(255,255,255,.9);}
+.h-tab.active{color:#fff;border-bottom-color:var(--secondary);}
+.header-date{color:var(--secondary-lt);font-size:10px;font-family:'DM Mono',monospace;}
+
+/* ── VIEWS ── */
+.view{display:none;animation:fadeIn .22s ease;}
+.view.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary) 55%,var(--primary-light) 100%);
+  padding:32px 28px 28px;position:relative;overflow:hidden;
+}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 78% 50%,rgba(105,186,239,.18) 0%,transparent 60%);}
+.hero-inner{max-width:1260px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:28px;align-items:start;position:relative;}
+.hero-tag{
+  display:inline-block;
+  background:rgba(105,186,239,.18);border:1px solid rgba(105,186,239,.32);
+  color:var(--secondary);font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  padding:3px 12px;border-radius:20px;margin-bottom:10px;
+}
+.hero-title{color:#fff;font-size:26px;font-weight:700;line-height:1.2;letter-spacing:.02em;}
+.hero-title em{color:var(--secondary);font-style:normal;}
+.hero-sub{color:rgba(255,255,255,.6);font-size:12px;font-weight:500;margin-top:6px;line-height:1.5;}
+.hero-kpis{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+.kpi{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);
+  border-radius:8px;padding:11px 15px;text-align:center;min-width:95px;
+}
+.kpi-val{font-size:24px;font-weight:700;color:#fff;line-height:1;font-family:'DM Mono',monospace;}
+.kpi-val.red{color:#ff9090;} .kpi-val.yellow{color:#ffd970;} .kpi-val.green{color:#7ddfb0;}
+.kpi-label{font-size:9px;color:rgba(255,255,255,.5);letter-spacing:.14em;text-transform:uppercase;margin-top:3px;}
+.hero-actions{display:flex;flex-direction:column;gap:7px;min-width:200px;}
+.h-btn{
+  padding:8px 16px;border-radius:6px;
+  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;border:none;display:flex;align-items:center;gap:7px;transition:all .15s;white-space:nowrap;
+}
+.h-btn.primary{background:var(--secondary);color:var(--primary-dark);}
+.h-btn.primary:hover{background:#4aaee8;}
+.h-btn.outline{background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.28);}
+.h-btn.outline:hover{background:rgba(255,255,255,.2);}
+.h-btn.danger{background:rgba(192,57,43,.75);color:#fff;}
+.h-btn.danger:hover{background:var(--red);}
+
+/* ── SUMMARY BAR ── */
+.sumbar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-bottom:2px solid var(--primary);}
+.sc{background:var(--card);padding:12px 18px;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sc.s-red::before{background:var(--red);}   .sc.s-yellow::before{background:var(--yellow);}
+.sc.s-green::before{background:var(--green);} .sc.s-blue::before{background:var(--primary);}
+.sc-lbl{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
+.sc-num{font-size:26px;font-weight:700;line-height:1.05;font-family:'DM Mono',monospace;}
+.sc-num.red{color:var(--red);} .sc-num.yellow{color:var(--yellow);}
+.sc-num.green{color:var(--green);} .sc-num.blue{color:var(--primary);}
+.sc-sub{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;}
+
+/* ── CONTENT ── */
+.content{padding:20px 28px 60px;max-width:1300px;margin:0 auto;}
+.sec-title{
+  font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--muted);margin:20px 0 12px;display:flex;align-items:center;gap:10px;
+}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── MONTH CARDS ── */
+.months-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.mc{
+  background:var(--card);border:1.5px solid var(--border);border-radius:8px;
+  padding:15px 16px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;
+}
+.mc:hover{box-shadow:0 4px 22px rgba(57,62,156,.14);transform:translateY(-2px);border-color:var(--primary);}
+.mc.mc-empty{opacity:.45;cursor:default;}
+.mc.mc-empty:hover{transform:none;box-shadow:none;border-color:var(--border);}
+.mc::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;}
+.mc.s-green::before{background:var(--green);}
+.mc.s-yellow::before{background:var(--yellow);}
+.mc.s-red::before{background:var(--red);}
+.mc.s-gray::before{background:var(--gray);}
+.mc-name{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--primary);}
+.mc-year{font-size:9px;color:var(--muted);margin-top:1px;}
+.mc-total{font-size:24px;font-weight:700;line-height:1;margin:9px 0 5px;font-family:'DM Mono',monospace;}
+.mc-total.red{color:var(--red);} .mc-total.yellow{color:var(--yellow);}
+.mc-total.green{color:var(--green);} .mc-total.gray{color:var(--gray);}
+.mc-stats{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;display:flex;gap:10px;margin-bottom:7px;}
+.mc-top{font-size:10px;font-weight:600;color:var(--ink);background:var(--bg);border-radius:4px;padding:4px 8px;display:flex;justify-content:space-between;gap:6px;}
+.mc-top span:first-child{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.mc-sim{font-size:10px;color:var(--secondary);font-family:'DM Mono',monospace;margin-top:5px;font-weight:600;}
+.mc-badge{
+  display:inline-block;padding:2px 8px;border-radius:10px;
+  font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-top:7px;
+}
+.mc-badge.green{background:var(--green-bg);color:var(--green);}
+.mc-badge.yellow{background:var(--yellow-bg);color:var(--yellow);}
+.mc-badge.red{background:var(--red-bg);color:var(--red);}
+.mc-badge.gray{background:var(--gray-bg);color:var(--gray);}
+
+/* ── DETAIL ── */
+.detail-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+.back-btn{
+  background:transparent;border:1.5px solid var(--border);color:var(--primary);
+  padding:7px 14px;border-radius:5px;
+  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;flex-shrink:0;
+}
+.back-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary);}
+.detail-title{font-size:22px;font-weight:700;color:var(--primary);line-height:1.2;}
+.detail-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:3px;}
+.detail-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+.dk{background:var(--card);border:1.5px solid var(--border);border-radius:8px;padding:14px 18px;}
+.dk-lbl{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.dk-val{font-size:28px;font-weight:700;font-family:'DM Mono',monospace;color:var(--primary);}
+.dk-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+
+/* ── SUPPLIER LIST ── */
+.sup-list{display:flex;flex-direction:column;gap:8px;}
+.sup-item{background:var(--card);border:1.5px solid var(--border);border-radius:8px;overflow:hidden;}
+.sup-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 16px;cursor:pointer;transition:background .1s;
+}
+.sup-hdr:hover{background:#F7F9FE;}
+.sup-hdr-left{display:flex;flex-direction:column;gap:2px;}
+.sup-name{font-size:13px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.04em;}
+.sup-meta{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
+.sup-hdr-right{display:flex;align-items:center;gap:14px;}
+.sup-total{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ink);}
+.sup-pct{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
+.sup-chevron{color:var(--muted);font-size:12px;transition:transform .2s;}
+.sup-item.expanded .sup-chevron{transform:rotate(180deg);}
+.sup-body{display:none;border-top:1px solid var(--border);}
+.sup-item.expanded .sup-body{display:block;}
+.tt{width:100%;border-collapse:collapse;font-size:12px;}
+.tt thead tr{background:#F7F9FE;}
+.tt th{
+  padding:7px 14px;font-size:9px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);text-align:left;border-bottom:1px solid var(--border);
+}
+.tt td{padding:8px 14px;border-bottom:1px solid #F0F4FA;font-family:'DM Mono',monospace;}
+.tt tr:last-child td{border-bottom:none;}
+.tt tr:hover td{background:#F7F9FE;}
+.tt .valor{font-weight:700;color:var(--primary);}
+.tt .nr{text-align:right;}
+.status-chip{
+  display:inline-block;padding:2px 8px;border-radius:3px;
+  font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+}
+.status-chip.aberto{background:var(--red-bg);color:var(--red);}
+.status-chip.pago{background:var(--green-bg);color:var(--green);}
+
+/* ── PARC ROW ── */
+.parc-row{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 13px;background:var(--bg);border-radius:5px;
+  border:1.5px solid var(--border);transition:border-color .15s;
+}
+.parc-row:focus-within{border-color:var(--primary);background:#fff;}
+.parc-ord{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:110px;}
+.parc-row input{
+  width:72px;padding:5px 9px;border:1.5px solid var(--border);border-radius:4px;
+  font-family:'DM Mono',monospace;font-size:15px;font-weight:700;color:var(--primary);
+  text-align:right;outline:none;background:#fff;
+}
+.parc-row input:focus{border-color:var(--primary);}
+.parc-unit{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
+
+/* ── FORN TAG ── */
+.forn-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--green-bg);color:var(--green);
+  border:1px solid rgba(14,124,74,.22);border-radius:4px;
+  padding:3px 10px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+}
+.forn-tag.unknown{background:var(--yellow-bg);color:var(--yellow);border-color:rgba(176,120,0,.2);}
+
+/* ── BUDGET CALC ── */
+.budget-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:8px;}
+.bcard{background:var(--card);border:1.5px solid var(--border);border-radius:8px;padding:22px;}
+.bcard-title{
+  font-size:13px;font-weight:700;color:var(--primary);letter-spacing:.06em;text-transform:uppercase;
+  margin-bottom:18px;border-bottom:2px solid var(--border);padding-bottom:9px;
+}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px;}
+.form-row.full{grid-template-columns:1fr;}
+.form-row.three{grid-template-columns:1fr 1fr 1fr;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fg label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{
+  padding:8px 11px;border:1.5px solid var(--border);border-radius:5px;
+  font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;color:var(--ink);
+  background:var(--bg);outline:none;transition:border-color .15s;
+}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--primary);background:#fff;}
+.fg textarea{resize:vertical;min-height:56px;}
+.form-actions{display:flex;gap:10px;margin-top:18px;}
+.fa{
+  padding:9px 18px;border-radius:5px;
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  cursor:pointer;border:none;transition:all .15s;
+}
+.fa.primary{background:var(--primary);color:#fff;}
+.fa.primary:hover{background:var(--primary-light);}
+.fa.sec{background:transparent;color:var(--muted);border:1.5px solid var(--border);}
+.fa.sec:hover{border-color:var(--primary);color:var(--primary);}
+
+/* ── PREVIEW PARCELAS ── */
+.preview-empty{text-align:center;padding:36px 20px;color:var(--muted);}
+.preview-empty p{font-size:11px;font-family:'DM Mono',monospace;margin-top:8px;line-height:1.6;}
+.preview-total{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:12px;}
+.parcelas-list{display:flex;flex-direction:column;gap:8px;}
+.parcela{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:var(--bg);border-radius:6px;border-left:4px solid var(--primary);}
+.parcela.p-red{border-left-color:var(--red);}
+.parcela.p-yellow{border-left-color:var(--yellow);}
+.parcela.p-green{border-left-color:var(--green);}
+.p-left{display:flex;flex-direction:column;gap:2px;}
+.p-ord{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.p-date{font-size:13px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ink);}
+.p-mes{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
+.p-right{text-align:right;}
+.p-val{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;color:var(--primary);}
+.p-impact{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;}
+
+/* ── SIM LIST ── */
+.sim-item{
+  background:var(--card);border:1.5px solid var(--border);border-radius:8px;
+  padding:13px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:8px;
+}
+.si-name{font-size:13px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.03em;}
+.si-meta{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;}
+.si-parc{font-size:10px;color:var(--ink);font-family:'DM Mono',monospace;margin-top:3px;}
+.si-obs{font-size:10px;color:var(--muted);margin-top:2px;}
+.si-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+.si-total{font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ink);}
+.si-del{
+  background:transparent;border:1px solid var(--red);color:var(--red);
+  border-radius:4px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer;
+  letter-spacing:.04em;text-transform:uppercase;transition:all .15s;
+}
+.si-del:hover{background:var(--red);color:#fff;}
+
+/* ── SCENARIO TABLE ── */
+.scenario-wrap{overflow-x:auto;}
+.stbl{width:100%;border-collapse:collapse;border:1.5px solid var(--border);border-radius:6px;overflow:hidden;}
+.stbl thead tr{background:var(--primary);}
+.stbl th{padding:9px 14px;font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.82);text-align:left;}
+.stbl th.nr{text-align:right;}
+.stbl td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;}
+.stbl tr:nth-child(even) td{background:#F7F9FE;}
+.stbl tr:hover td{background:#EDF2FF;}
+.st-mes{font-weight:700;font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--ink);letter-spacing:.05em;}
+.st-nr{text-align:right;font-family:'DM Mono',monospace;}
+.st-proj{font-weight:700;color:var(--primary);font-family:'DM Mono',monospace;}
+.st-diff{font-weight:700;color:var(--secondary);font-family:'DM Mono',monospace;}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+.dot-green{background:var(--green);} .dot-yellow{background:var(--yellow);} .dot-red{background:var(--red);}
+
+/* ── HISTORY ── */
+.htbl{width:100%;border-collapse:collapse;border:1.5px solid var(--border);border-radius:6px;overflow:hidden;}
+.htbl thead tr{background:var(--primary);}
+.htbl th{padding:9px 14px;font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.82);text-align:left;}
+.htbl td{padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;font-family:'DM Mono',monospace;}
+.htbl tr:nth-child(even) td{background:#F7F9FE;}
+
+/* ── PARAMS ── */
+.params-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+.psect{background:var(--card);border:1.5px solid var(--border);border-radius:8px;padding:22px;}
+.psect-title{font-size:13px;font-weight:700;color:var(--primary);letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px;border-bottom:2px solid var(--border);padding-bottom:9px;}
+.param-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F0F4FA;}
+.param-row:last-child{border-bottom:none;}
+.param-lbl{font-size:12px;font-weight:600;color:var(--ink);}
+.param-hint{font-size:10px;color:var(--muted);margin-top:2px;}
+.param-inp{
+  width:145px;padding:7px 10px;border:1.5px solid var(--border);border-radius:5px;
+  font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--primary);
+  text-align:right;outline:none;background:var(--bg);
+}
+.param-inp:focus{border-color:var(--primary);background:#fff;}
+
+/* ── MODAL ── */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(57,62,156,.52);z-index:400;align-items:center;justify-content:center;}
+.modal-ov.show{display:flex;}
+.modal-box{background:#fff;border-radius:8px;padding:26px 30px;max-width:460px;width:92%;box-shadow:0 8px 40px rgba(57,62,156,.25);animation:fadeIn .2s ease;}
+.modal-title{font-size:17px;font-weight:700;color:var(--primary);margin-bottom:6px;}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+.modal-stats{background:var(--bg);border-radius:5px;padding:11px 14px;margin-bottom:16px;}
+.modal-stats p{font-size:12px;font-family:'DM Mono',monospace;color:var(--ink);margin:3px 0;}
+.modal-stats p strong{color:var(--primary);}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+.mbtn{padding:9px 20px;border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;border:none;transition:all .15s;}
+.mbtn.ok{background:var(--primary);color:#fff;}
+.mbtn.ok:hover{background:var(--primary-light);}
+.mbtn.cancel{background:var(--bg);color:var(--muted);border:1.5px solid var(--border);}
+.mbtn.cancel:hover{border-color:var(--primary);color:var(--primary);}
+
+/* ── PROGRESS TOAST ── */
+.progress-bar{
+  display:none;position:fixed;bottom:24px;right:24px;
+  background:var(--primary-dark);color:#fff;border-radius:8px;
+  padding:12px 18px;box-shadow:0 4px 20px rgba(0,0,0,.28);
+  z-index:500;align-items:center;gap:12px;min-width:260px;
+}
+.progress-bar.show{display:flex;}
+.pb-spinner{
+  width:16px;height:16px;border:2.5px solid rgba(255,255,255,.3);
+  border-top-color:var(--secondary);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pb-text{font-size:11px;font-family:'DM Mono',monospace;}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:#fff;border-radius:6px;padding:9px 18px;
+  font-size:12px;font-family:'DM Mono',monospace;
+  box-shadow:0 4px 16px rgba(0,0,0,.28);z-index:600;opacity:0;transition:opacity .3s;pointer-events:none;
+}
+.toast.show{opacity:1;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:56px 20px;color:var(--muted);}
+.empty-state h3{font-size:15px;font-weight:700;margin-bottom:7px;}
+.empty-state p{font-size:11px;font-family:'DM Mono',monospace;line-height:1.7;}
+
+/* ── PRINT ── */
+@media print{
+  .header,.hero-actions,.back-btn,.fa,.h-btn,.progress-bar,.toast,.modal-ov{display:none!important;}
+  .view{display:block!important;}
+  body{background:#fff;}
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .hero-inner{grid-template-columns:1fr;}
+  .hero-actions{display:none;}
+  .sumbar{grid-template-columns:repeat(2,1fr);}
+  .budget-grid{grid-template-columns:1fr;}
+  .detail-kpis{grid-template-columns:repeat(2,1fr);}
+  .params-grid{grid-template-columns:1fr;}
+  .content{padding:16px 14px 60px;}
+}
+@media(max-width:600px){
+  .months-grid{grid-template-columns:repeat(2,1fr);}
+  .hero-kpis{gap:7px;}
+  .kpi{min-width:80px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════ -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">SRV GÁS<sup>®</sup></div>
+      <div class="logo-slogan">A Loja do Gasista</div>
+    </div>
+  </div>
+  <nav class="header-nav">
+    <a class="nav-hub" href="HUB.html">← HUB</a>
+    <div class="h-tab active"   onclick="switchView('dashboard')">Dashboard</div>
+    <div class="h-tab"          onclick="switchView('detalhe')">Detalhe do Mês</div>
+    <div class="h-tab"          onclick="switchView('budget')">Provisão de Compra</div>
+    <div class="h-tab"          onclick="switchView('cenario')">Cenário</div>
+    <div class="h-tab"          onclick="switchView('historico')">Histórico</div>
+    <div class="h-tab"          onclick="switchView('parametros')">Parâmetros</div>
+  </nav>
+  <div id="header-date" class="header-date"></div>
+</header>
+
+<!-- ══ PROGRESS ══════════════════════════════════════════ -->
+<div class="progress-bar" id="prog-bar">
+  <div class="pb-spinner"></div>
+  <div class="pb-text" id="prog-text">Processando…</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     VIEW: DASHBOARD
+══════════════════════════════════════════════════════ -->
+<div class="view active" id="view-dashboard">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-tag">SRV GÁS® — Sistema Financeiro · Budget de Compras</div>
+        <h1 class="hero-title">Programação de <em>Compras</em> &amp; Contas a Pagar</h1>
+        <p class="hero-sub">Importe o relatório do Bling · Simule novas compras · Projete o impacto no caixa</p>
+        <div class="hero-kpis">
+          <div class="kpi"><div class="kpi-val red"    id="kpi-total">R$&nbsp;0</div><div class="kpi-label">Total a Pagar</div></div>
+          <div class="kpi"><div class="kpi-val"        id="kpi-forn">0</div><div class="kpi-label">Fornecedores</div></div>
+          <div class="kpi"><div class="kpi-val"        id="kpi-tit">0</div><div class="kpi-label">Títulos</div></div>
+          <div class="kpi"><div class="kpi-val yellow"  id="kpi-critico">—</div><div class="kpi-label">Mês Crítico</div></div>
+          <div class="kpi"><div class="kpi-val green"   id="kpi-media">R$&nbsp;0</div><div class="kpi-label">Média Mensal</div></div>
+          <div class="kpi"><div class="kpi-val"        id="kpi-sim">R$&nbsp;0</div><div class="kpi-label">Simulado</div></div>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <label class="h-btn primary" for="pdf-input">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4l4 4"/></svg>
+          Importar Bling PDF
+          <input type="file" id="pdf-input" accept=".pdf,application/pdf" onchange="handlePDFImport(this)">
+        </label>
+        <label class="h-btn outline" for="json-input">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+          Carregar Base
+          <input type="file" id="json-input" accept=".json" onchange="handleLoadDB(this)">
+        </label>
+        <button class="h-btn outline" onclick="saveDB()">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+          Salvar Base JSON
+        </button>
+        <button class="h-btn outline" onclick="window.print()">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm1-11V4a2 2 0 012-2h2a2 2 0 012 2v3"/></svg>
+          Exportar / Imprimir
+        </button>
+        <button class="h-btn danger" onclick="confirmClearSim()">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Limpar Simulação
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY BAR -->
+  <div class="sumbar">
+    <div class="sc s-red">
+      <div class="sc-lbl">Total Contas a Pagar</div>
+      <div class="sc-num red" id="sum-total">R$ 0,00</div>
+      <div class="sc-sub"    id="sum-total-sub">Sem dados importados</div>
+    </div>
+    <div class="sc s-yellow">
+      <div class="sc-lbl">Mês Mais Carregado</div>
+      <div class="sc-num yellow" id="sum-pico">—</div>
+      <div class="sc-sub"       id="sum-pico-sub">—</div>
+    </div>
+    <div class="sc s-blue">
+      <div class="sc-lbl">Compras Simuladas</div>
+      <div class="sc-num blue" id="sum-sim">R$ 0,00</div>
+      <div class="sc-sub"     id="sum-sim-sub">Nenhuma simulação ativa</div>
+    </div>
+    <div class="sc s-green">
+      <div class="sc-lbl">Última Importação</div>
+      <div class="sc-num green" id="sum-import">—</div>
+      <div class="sc-sub"      id="sum-import-sub">Nenhum arquivo importado</div>
+    </div>
+  </div>
+
+  <!-- MONTH GRID -->
+  <div class="content">
+    <div class="sec-title">Compromissos Mensais — Clique para detalhar</div>
+    <div id="months-grid" class="months-grid"></div>
+  </div>
+
+</div><!-- /dashboard -->
+
+<!-- ══════════════════════════════════════════════════════
+     VIEW: DETALHE DO MÊS
+══════════════════════════════════════════════════════ -->
+<div class="view" id="view-detalhe">
+  <div class="content">
+    <div class="detail-header">
+      <button class="back-btn" onclick="switchView('dashboard')">← Voltar</button>
+      <div>
+        <div class="detail-title" id="dt-title">Selecione um mês</div>
+        <div class="detail-sub"  id="dt-sub">Selecione um mês no Dashboard para ver o detalhe</div>
+      </div>
+    </div>
+    <div class="detail-kpis">
+      <div class="dk"><div class="dk-lbl">Total a Pagar</div><div class="dk-val" id="dt-total">R$ 0,00</div><div class="dk-sub">saldo em aberto no mês</div></div>
+      <div class="dk"><div class="dk-lbl">Fornecedores</div><div class="dk-val" id="dt-forn">0</div><div class="dk-sub">com lançamentos no mês</div></div>
+      <div class="dk"><div class="dk-lbl">Títulos em Aberto</div><div class="dk-val" id="dt-tit">0</div><div class="dk-sub">documentos a vencer</div></div>
+      <div class="dk"><div class="dk-lbl">Compras Simuladas</div><div class="dk-val" id="dt-sim">R$ 0,00</div><div class="dk-sub">impacto das simulações</div></div>
+    </div>
+    <div class="sec-title">Fornecedores — Maior para Menor</div>
+    <div id="sup-list" class="sup-list"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     VIEW: PROVISÃO DE COMPRA
+══════════════════════════════════════════════════════ -->
+<div class="view" id="view-budget">
+  <div class="content">
+    <div class="sec-title">Nova Provisão de Compra</div>
+    <div class="budget-grid">
+
+      <!-- FORM -->
+      <div class="bcard">
+        <div class="bcard-title">Dados da Provisão</div>
+
+        <!-- Fornecedor + Data -->
+        <div class="form-row">
+          <div class="fg">
+            <label>Fornecedor *</label>
+            <input type="text" id="bf-forn" placeholder="Nome do fornecedor" list="forn-dl" oninput="onFornInput(this)">
+            <datalist id="forn-dl"></datalist>
+            <div id="bf-forn-tag" style="display:none;margin-top:5px"></div>
+          </div>
+          <div class="fg">
+            <label>Data da Compra *</label>
+            <input type="date" id="bf-data" oninput="previewBudget()">
+          </div>
+        </div>
+
+        <!-- Categoria + Valor -->
+        <div class="form-row">
+          <div class="fg">
+            <label>Categoria / Título</label>
+            <input type="text" id="bf-cat" placeholder="Ex: Insumos, Equipamento, Serviço…" list="cat-dl">
+            <datalist id="cat-dl">
+              <option value="Insumos">
+              <option value="Equipamento">
+              <option value="Serviço">
+              <option value="Matéria-Prima">
+              <option value="Embalagem">
+              <option value="Manutenção">
+              <option value="Peças e Componentes">
+              <option value="Ferramentas">
+              <option value="Outros">
+            </datalist>
+          </div>
+          <div class="fg">
+            <label>Valor Total (R$) *</label>
+            <input type="text" id="bf-valor" placeholder="0,00" oninput="previewBudget()">
+          </div>
+        </div>
+
+        <!-- Qtd. parcelas -->
+        <div class="form-row full" style="margin-bottom:8px">
+          <div class="fg">
+            <label>Quantidade de Pagamentos</label>
+            <select id="bf-parcelas" onchange="onNParcelasChange()">
+              <option value="1">1 pagamento (à vista)</option>
+              <option value="2" selected>2 pagamentos</option>
+              <option value="3">3 pagamentos</option>
+              <option value="4">4 pagamentos</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Parcelas com dias inline -->
+        <div style="margin-bottom:13px">
+          <div class="fg" style="margin-bottom:6px">
+            <label>Prazo de cada pagamento (dias após a compra)</label>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px" id="parcelas-dias">
+            <div class="parc-row" id="g-p1">
+              <span class="parc-ord">1º Pagamento</span>
+              <input type="number" id="bf-p1" value="30" min="1" max="730" oninput="previewBudget()">
+              <span class="parc-unit">dias</span>
+            </div>
+            <div class="parc-row" id="g-p2">
+              <span class="parc-ord">2º Pagamento</span>
+              <input type="number" id="bf-p2" value="60" min="1" max="730" oninput="previewBudget()">
+              <span class="parc-unit">dias</span>
+            </div>
+            <div class="parc-row" id="g-p3" style="display:none">
+              <span class="parc-ord">3º Pagamento</span>
+              <input type="number" id="bf-p3" value="90" min="1" max="730" oninput="previewBudget()">
+              <span class="parc-unit">dias</span>
+            </div>
+            <div class="parc-row" id="g-p4" style="display:none">
+              <span class="parc-ord">4º Pagamento</span>
+              <input type="number" id="bf-p4" value="120" min="1" max="730" oninput="previewBudget()">
+              <span class="parc-unit">dias</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Responsável + Condição -->
+        <div class="form-row">
+          <div class="fg">
+            <label>Responsável</label>
+            <input type="text" id="bf-resp" placeholder="Nome do responsável">
+          </div>
+          <div class="fg">
+            <label>Condição de Pagamento</label>
+            <input type="text" id="bf-cond" placeholder="Ex: 30/60 dias">
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="fg">
+            <label>Observação</label>
+            <textarea id="bf-obs" placeholder="Observações sobre a provisão…"></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="fa primary" onclick="addSim()">Adicionar Provisão</button>
+          <button class="fa sec"     onclick="clearBF()">Limpar</button>
+        </div>
+      </div>
+
+      <!-- PREVIEW -->
+      <div class="bcard">
+        <div class="bcard-title">Pré-visualização de Impacto</div>
+        <div id="bf-preview">
+          <div class="preview-empty">
+            <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="currentColor" opacity=".3">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            <p>Preencha os dados ao lado para visualizar<br>o impacto dos pagamentos por mês.</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /budget-grid -->
+
+    <div class="sec-title" style="margin-top:28px">Provisões Ativas</div>
+    <div id="sim-list"></div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     VIEW: CENÁRIO ATUAL × PROJETADO
+══════════════════════════════════════════════════════ -->
+<div class="view" id="view-cenario">
+  <div class="content">
+    <div class="sec-title">Cenário Atual × Projetado — por Mês</div>
+    <div class="scenario-wrap" id="scenario-wrap"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     VIEW: HISTÓRICO DE IMPORTAÇÕES
+══════════════════════════════════════════════════════ -->
+<div class="view" id="view-historico">
+  <div class="content">
+    <div class="sec-title">Histórico de Importações</div>
+    <div id="hist-wrap"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     VIEW: PARÂMETROS
+══════════════════════════════════════════════════════ -->
+<div class="view" id="view-parametros">
+  <div class="content">
+    <div class="sec-title">Configuração de Parâmetros</div>
+    <div class="params-grid">
+      <div class="psect">
+        <div class="psect-title">Semáforo de Caixa</div>
+        <div class="param-row">
+          <div><div class="param-lbl">🟢 Limite Saudável (até R$)</div><div class="param-hint">Meses abaixo deste valor são marcados como OK</div></div>
+          <input type="text" class="param-inp" id="p-saudavel" value="100.000" onchange="saveParams()">
+        </div>
+        <div class="param-row">
+          <div><div class="param-lbl">🟡 Limite Atenção (até R$)</div><div class="param-hint">Entre Saudável e este valor → Atenção</div></div>
+          <input type="text" class="param-inp" id="p-atencao" value="200.000" onchange="saveParams()">
+        </div>
+        <div class="param-row">
+          <div><div class="param-lbl">🔴 Limite Crítico (acima de R$)</div><div class="param-hint">Acima deste valor → Crítico</div></div>
+          <input type="text" class="param-inp" id="p-critico" value="200.000" onchange="saveParams()">
+        </div>
+      </div>
+      <div class="psect">
+        <div class="psect-title">Regras e Exibição</div>
+        <div class="param-row">
+          <div><div class="param-lbl">Parcelamento Padrão</div><div class="param-hint">Condição pré-preenchida na calculadora</div></div>
+          <select id="p-parcela" class="param-inp" style="text-align:left" onchange="saveParams()">
+            <option value="1">À Vista (1x)</option>
+            <option value="2" selected>30 × 60 dias (2x)</option>
+            <option value="3">30 × 60 × 90 dias (3x)</option>
+            <option value="4">30 × 60 × 90 × 120 dias (4x)</option>
+          </select>
+        </div>
+        <div class="param-row">
+          <div><div class="param-lbl">Ano de Referência</div><div class="param-hint">Ano exibido nos cards mensais</div></div>
+          <input type="number" class="param-inp" id="p-ano" value="2026" min="2024" max="2035" onchange="saveParams()">
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:18px;text-align:right">
+      <button class="fa primary" onclick="saveParams();showToast('Parâmetros salvos.')">Salvar Parâmetros</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL ══════════════════════════════════════════ -->
+<div class="modal-ov" id="modal">
+  <div class="modal-box">
+    <div class="modal-title"   id="m-title">Confirmar</div>
+    <div class="modal-sub"     id="m-sub">Deseja continuar?</div>
+    <div class="modal-stats"   id="m-stats" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="mbtn cancel" id="m-cancel-btn" onclick="closeModal()">Cancelar</button>
+      <button class="mbtn ok"     id="m-ok-btn"     onclick="closeModal()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ── PDF.JS WORKER ─────────────────────────────────────
+if(typeof pdfjsLib!=='undefined'){
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+// ── CONSTANTES ────────────────────────────────────────
+const MESES = [
+  'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
+];
+const VIEWS = ['dashboard','detalhe','budget','cenario','historico','parametros'];
+
+// ── BANCO DE DADOS ────────────────────────────────────
+/**
+ * Estrutura:
+ * contasAPagar:      [ { id, fornecedor, documento, descricao, emissao,
+ *                        vencimento, valor, valorPago, aPagar, situacao } ]
+ * comprasSimuladas:  [ { id, fornecedor, dataCompra, valorTotal, condicao,
+ *                        parcelas:[{ordem,prazo,valor,vencimento}],
+ *                        responsavel, observacao, criadoEm } ]
+ * parametros:        { limiteSaudavel, limiteAtencao, limiteCritico,
+ *                      nParcelas, anoReferencia }
+ * historicoImportacoes: [ { data, hora, arquivo, titulos, fornecedores, valorTotal } ]
+ */
+let DB = {
+  contasAPagar: [],
+  comprasSimuladas: [],
+  parametros: {
+    limiteSaudavel: 100000,
+    limiteAtencao:  200000,
+    limiteCritico:  200000,
+    nParcelas:      2,
+    anoReferencia:  new Date().getFullYear()
+  },
+  historicoImportacoes: []
+};
+
+let selectedMonthKey = null; // "YYYY-MM"
+
+// ── NAVEGAÇÃO ─────────────────────────────────────────
+function switchView(name) {
+  VIEWS.forEach((v,i) => {
+    const el = document.getElementById('view-'+v);
+    const tb = document.querySelectorAll('.h-tab')[i];
+    if(v===name){ el.classList.add('active'); tb.classList.add('active'); }
+    else         { el.classList.remove('active'); tb.classList.remove('active'); }
+  });
+  if(name==='cenario')   renderScenario();
+  if(name==='historico') renderHistory();
+  if(name==='budget')    renderSimList();
+  if(name==='detalhe' && selectedMonthKey) renderMonthDetail(selectedMonthKey);
+}
+
+// ── RELÓGIO ───────────────────────────────────────────
+function updateClock(){
+  const now = new Date();
+  document.getElementById('header-date').textContent =
+    now.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}).toUpperCase() +
+    ' ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+updateClock(); setInterval(updateClock,30000);
+
+// ══════════════════════════════════════════════════════
+//  PDF PARSER — BLING CONTAS A PAGAR AGRUPADO POR FORNECEDOR
+// ══════════════════════════════════════════════════════
+
+async function extractPDFLines(file){
+  const buf  = await file.arrayBuffer();
+  const pdf  = await pdfjsLib.getDocument({data: buf}).promise;
+  const all  = [];
+
+  for(let p=1;p<=pdf.numPages;p++){
+    const page = await pdf.getPage(p);
+    const tc   = await page.getTextContent();
+    const vp   = page.getViewport({scale:1});
+    tc.items.forEach(item=>{
+      const x = item.transform[4];
+      const y = vp.height - item.transform[5]; // flip: 0 = topo
+      if(item.str.trim()) all.push({t:item.str, x, y, p});
+    });
+  }
+
+  // Agrupar em linhas (tolerância vertical 4pt)
+  all.sort((a,b)=>a.p-b.p||a.y-b.y||a.x-b.x);
+  if(!all.length) return [];
+
+  const lines=[]; let cur=[all[0]];
+  for(let i=1;i<all.length;i++){
+    const it=all[i], ref=cur[cur.length-1];
+    if(it.p===ref.p && Math.abs(it.y-ref.y)<=4) cur.push(it);
+    else{ lines.push(cur.sort((a,b)=>a.x-b.x).map(i=>i.t).join(' ').trim()); cur=[it]; }
+  }
+  lines.push(cur.sort((a,b)=>a.x-b.x).map(i=>i.t).join(' ').trim());
+  return lines.filter(l=>l.length>0);
+}
+
+function parseBlingPDF(lines){
+  const FORN_RE  = /^fornecedor\s*[:\-]?\s*(.+)/i;
+  const DATE_RE  = /\b(\d{2}\/\d{2}\/\d{4})\b/g;
+  const MONEY_RE = /\b(\d{1,3}(?:\.\d{3})*,\d{2})\b/g;
+  // Pular linhas que são cabeçalhos, totais ou rodapé
+  const SKIP_RE  = /^(total|subtotal|período|relat|página|filtro|emiss[ã]|compet[ê]|data\s|n[°º]\s|descri|hist[oó]|forma\s|status|vencim|situaç|valor\s|doc\s|parce|emiss[aã]o)/i;
+  const PAGO_RE  = /\bpag[ao]\b|\bcanceladl?\b|\bbaixad[ao]\b/i;
+
+  const out=[]; let forn='';
+
+  for(const line of lines){
+    const txt=line.trim();
+    if(!txt) continue;
+
+    // Cabeçalho de grupo: "Fornecedor: NOME"
+    const fm=txt.match(FORN_RE);
+    if(fm){ forn=fm[1].replace(/\s+/g,' ').trim(); continue; }
+
+    // Pular linhas estruturais
+    if(SKIP_RE.test(txt)) continue;
+
+    const datas   = [...txt.matchAll(DATE_RE)].map(m=>m[1]);
+    const valores = [...txt.matchAll(MONEY_RE)].map(m=>parseMoney(m[1]));
+    if(!datas.length||!valores.length) continue;
+
+    // Vencimento: 2ª data (1ª = emissão) ou única
+    const vencStr  = datas.length>=2 ? datas[1] : datas[0];
+    const emissStr = datas.length>=2 ? datas[0] : '';
+
+    // "A Pagar": 3º valor se houver (valor / pago / a pagar), senão o último
+    const aPagar = valores.length>=3 ? valores[2] : valores[valores.length-1];
+    if(aPagar<=0) continue;
+    if(PAGO_RE.test(txt)) continue;
+
+    // Nº documento: sequência antes da 1ª data
+    const beforeDate = txt.split(datas[0])[0].trim();
+    const docM = beforeDate.match(/[\w\d\/\-]+$/);
+    const doc  = docM ? docM[0] : '';
+
+    out.push({
+      id:        genId(),
+      fornecedor: forn,
+      documento:  doc,
+      descricao:  '',
+      emissao:    emissStr,
+      vencimento: vencStr,
+      valor:      valores[0]||aPagar,
+      valorPago:  valores.length>=2 ? valores[1] : 0,
+      aPagar,
+      situacao:   'Aberto'
+    });
+  }
+  return out;
+}
+
+function parseMoney(s){
+  if(!s) return 0;
+  return parseFloat(s.replace(/\./g,'').replace(',','.'))||0;
+}
+function parseDataBR(s){
+  if(!s) return null;
+  const [d,m,y]=s.split('/').map(Number);
+  if(!d||!m||!y) return null;
+  return new Date(y,m-1,d);
+}
+function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+// ══════════════════════════════════════════════════════
+//  AGRUPAMENTO
+// ══════════════════════════════════════════════════════
+function groupByMonth(list){
+  const g={};
+  list.forEach(p=>{
+    const dt=parseDataBR(p.vencimento);
+    if(!dt) return;
+    const key=dt.getFullYear()+'-'+String(dt.getMonth()).padStart(2,'0');
+    if(!g[key]) g[key]={year:dt.getFullYear(),month:dt.getMonth(),items:[]};
+    g[key].items.push(p);
+  });
+  return g;
+}
+
+function groupBySupplier(list){
+  const g={};
+  list.forEach(p=>{
+    const k=p.fornecedor.trim().toUpperCase()||'SEM FORNECEDOR';
+    if(!g[k]) g[k]={name:k,items:[],total:0};
+    g[k].items.push(p);
+    g[k].total+=p.aPagar;
+  });
+  return Object.values(g).sort((a,b)=>b.total-a.total);
+}
+
+function simImpactByMonth(){
+  const imp={};
+  DB.comprasSimuladas.forEach(c=>{
+    c.parcelas.forEach(p=>{
+      const dt=parseDataBR(p.vencimento);
+      if(!dt) return;
+      const k=dt.getFullYear()+'-'+String(dt.getMonth()).padStart(2,'0');
+      imp[k]=(imp[k]||0)+p.valor;
+    });
+  });
+  return imp;
+}
+
+// ══════════════════════════════════════════════════════
+//  IMPORT HANDLER
+// ══════════════════════════════════════════════════════
+async function handlePDFImport(input){
+  const file=input.files[0]; if(!file) return;
+  input.value='';
+  showProg('Carregando PDF…');
+  try{
+    if(typeof pdfjsLib==='undefined') throw new Error('PDF.js não carregou. Verifique a conexão com a internet.');
+    showProg('Extraindo texto…');
+    const lines=await extractPDFLines(file);
+    showProg('Identificando lançamentos…');
+    const raw=parseBlingPDF(lines);
+    if(!raw.length) throw new Error(
+      'Nenhum lançamento identificado. Confirme que o arquivo é o "Relatório de Contas a Pagar Agrupado por Fornecedor" do Bling.'
+    );
+
+    const fornSet = new Set(raw.map(r=>r.fornecedor.trim().toUpperCase()));
+    const total   = raw.reduce((s,r)=>s+r.aPagar,0);
+
+    DB.historicoImportacoes.push({
+      data:        new Date().toLocaleDateString('pt-BR'),
+      hora:        new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+      arquivo:     file.name,
+      titulos:     raw.length,
+      fornecedores:fornSet.size,
+      valorTotal:  total
+    });
+    DB.contasAPagar = raw;
+    persistLocal();
+    hideProg();
+
+    showModal(
+      'Importação Concluída',
+      'Os lançamentos foram carregados com sucesso.',
+      `<p><strong>Arquivo:</strong> ${file.name}</p>
+       <p><strong>Títulos:</strong> ${raw.length}</p>
+       <p><strong>Fornecedores:</strong> ${fornSet.size}</p>
+       <p><strong>Total a pagar:</strong> ${fmtBRL(total)}</p>`,
+      ()=>{ refreshDashboard(); }
+    );
+  }catch(err){
+    hideProg();
+    showModal('Erro na Importação', err.message, '', null, true);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════
+function refreshDashboard(){
+  updateKPIs();
+  renderMonthCards();
+  populateDatalist();
+}
+
+function updateKPIs(){
+  const pay  = DB.contasAPagar;
+  const sims = DB.comprasSimuladas;
+  const total    = pay.reduce((s,r)=>s+r.aPagar,0);
+  const fornSet  = new Set(pay.map(p=>p.fornecedor.trim().toUpperCase()));
+  const groups   = groupByMonth(pay);
+  const meses    = Object.values(groups);
+  const totalSim = sims.reduce((s,c)=>s+c.valorTotal,0);
+
+  let picoKey='', picoVal=0;
+  meses.forEach(m=>{
+    const v=m.items.reduce((s,r)=>s+r.aPagar,0);
+    if(v>picoVal){ picoVal=v; picoKey=m.year+'-'+String(m.month).padStart(2,'0'); }
+  });
+  const media = meses.length ? total/meses.length : 0;
+
+  setTxt('kpi-total',   fmtBRLk(total));
+  setTxt('kpi-forn',    fornSet.size);
+  setTxt('kpi-tit',     pay.length);
+  setTxt('kpi-critico', picoKey ? MESES[parseInt(picoKey.split('-')[1])].slice(0,3).toUpperCase() : '—');
+  setTxt('kpi-media',   fmtBRLk(media));
+  setTxt('kpi-sim',     fmtBRLk(totalSim));
+
+  setTxt('sum-total',     fmtBRL(total));
+  setTxt('sum-total-sub', pay.length+' títulos · '+fornSet.size+' fornecedores');
+
+  if(picoKey){
+    const m=parseInt(picoKey.split('-')[1]);
+    setTxt('sum-pico',    MESES[m]+'/'+picoKey.split('-')[0]);
+    setTxt('sum-pico-sub',fmtBRL(picoVal));
+  }else{
+    setTxt('sum-pico','—'); setTxt('sum-pico-sub','Sem dados');
+  }
+
+  setTxt('sum-sim',     fmtBRL(totalSim));
+  setTxt('sum-sim-sub', sims.length+' simulações ativas');
+
+  const last=DB.historicoImportacoes.at(-1);
+  if(last){
+    setTxt('sum-import',    last.data+' '+last.hora);
+    setTxt('sum-import-sub',last.titulos+' títulos · '+last.arquivo);
+  }
+}
+
+function renderMonthCards(){
+  const grid   = document.getElementById('months-grid');
+  const groups = groupByMonth(DB.contasAPagar);
+  const impact = simImpactByMonth();
+  const ano    = DB.parametros.anoReferencia||new Date().getFullYear();
+  let html='';
+
+  for(let m=0;m<12;m++){
+    const key    = ano+'-'+String(m).padStart(2,'0');
+    const grp    = groups[key];
+    const nome   = MESES[m];
+    const simVal = impact[key]||0;
+
+    if(!grp&&!simVal){
+      html+=`<div class="mc mc-empty s-gray">
+        <div class="mc-name">${nome}</div><div class="mc-year">${ano}</div>
+        <div class="mc-total gray">—</div>
+        <div class="mc-stats"><span>sem dados</span></div>
+        <span class="mc-badge gray">Sem Dados</span>
+      </div>`;
+      continue;
+    }
+
+    const items   = grp?.items||[];
+    const atual   = items.reduce((s,r)=>s+r.aPagar,0);
+    const proj    = atual+simVal;
+    const tit     = items.length;
+    const fornSet = new Set(items.map(i=>i.fornecedor.trim().toUpperCase()));
+    const sups    = groupBySupplier(items);
+    const topName = sups[0] ? sups[0].name.split(' ').slice(0,2).join(' ') : (simVal>0?'(apenas simulado)':'—');
+    const topVal  = sups[0]?.total||0;
+    const st      = monthStatus(proj);
+    const stLbl   = {green:'Saudável',yellow:'Atenção',red:'Crítico'}[st];
+
+    html+=`<div class="mc s-${st}" onclick="openDetail('${key}')">
+      <div class="mc-name">${nome}</div><div class="mc-year">${ano}</div>
+      <div class="mc-total ${st}">${fmtBRL(atual)}</div>
+      <div class="mc-stats"><span>${tit} títulos</span><span>${fornSet.size} fornec.</span></div>
+      ${sups[0]?`<div class="mc-top"><span>${topName}</span><span>${fmtBRL(topVal)}</span></div>`:''}
+      ${simVal>0?`<div class="mc-sim">+ ${fmtBRL(simVal)} sim. → ${fmtBRL(proj)}</div>`:''}
+      <div><span class="mc-badge ${st}">${stLbl}</span></div>
+    </div>`;
+  }
+
+  grid.innerHTML = html||`<div class="empty-state"><h3>Nenhum dado importado</h3><p>Importe o relatório de Contas a Pagar do Bling<br>para visualizar os compromissos mensais.</p></div>`;
+}
+
+function monthStatus(v){
+  const {limiteCritico,limiteAtencao}=DB.parametros;
+  return v>limiteCritico?'red':v>limiteAtencao?'yellow':'green';
+}
+
+// ══════════════════════════════════════════════════════
+//  DETALHE DO MÊS
+// ══════════════════════════════════════════════════════
+function openDetail(key){
+  selectedMonthKey=key;
+  renderMonthDetail(key);
+  switchView('detalhe');
+}
+
+function renderMonthDetail(key){
+  const grp    = groupByMonth(DB.contasAPagar)[key];
+  const impact = simImpactByMonth();
+  const [y,mi] = key.split('-');
+  const nome   = MESES[parseInt(mi)]+'/'+y;
+
+  setTxt('dt-title', nome);
+  setTxt('dt-sub',   'Lançamentos com vencimento em '+nome);
+
+  if(!grp){
+    setTxt('dt-total','R$ 0,00');
+    setTxt('dt-forn','0');
+    setTxt('dt-tit','0');
+    setTxt('dt-sim', fmtBRL(impact[key]||0));
+    document.getElementById('sup-list').innerHTML='<div class="empty-state"><h3>Sem dados</h3><p>Nenhuma conta a pagar para este mês.</p></div>';
+    return;
+  }
+
+  const items   = grp.items;
+  const total   = items.reduce((s,r)=>s+r.aPagar,0);
+  const fornSet = new Set(items.map(i=>i.fornecedor.trim().toUpperCase()));
+  const sups    = groupBySupplier(items);
+
+  setTxt('dt-total', fmtBRL(total));
+  setTxt('dt-forn',  fornSet.size);
+  setTxt('dt-tit',   items.length);
+  setTxt('dt-sim',   fmtBRL(impact[key]||0));
+
+  let html='';
+  sups.forEach((sup,idx)=>{
+    const pct   = total>0?(sup.total/total*100).toFixed(1):0;
+    const sId   = 'sup-'+idx;
+    const sorted = [...sup.items].sort((a,b)=>{
+      const da=parseDataBR(a.vencimento)||0, db=parseDataBR(b.vencimento)||0;
+      return da-db;
+    });
+    html+=`<div class="sup-item" id="${sId}">
+      <div class="sup-hdr" onclick="toggleSup('${sId}')">
+        <div class="sup-hdr-left">
+          <div class="sup-name">${sup.name}</div>
+          <div class="sup-meta">${sup.items.length} título${sup.items.length>1?'s':''} · ${pct}% do mês</div>
+        </div>
+        <div class="sup-hdr-right">
+          <div class="sup-total">${fmtBRL(sup.total)}</div>
+          <div class="sup-pct">${pct}%</div>
+          <div class="sup-chevron">▼</div>
+        </div>
+      </div>
+      <div class="sup-body">
+        <table class="tt">
+          <thead><tr>
+            <th>Documento</th><th>Emissão</th><th>Vencimento</th>
+            <th class="nr">Valor</th><th class="nr">A Pagar</th><th>Situação</th>
+          </tr></thead>
+          <tbody>
+            ${sorted.map(t=>`<tr>
+              <td>${t.documento||'—'}</td>
+              <td>${t.emissao||'—'}</td>
+              <td><strong>${t.vencimento}</strong></td>
+              <td class="nr">${fmtBRL(t.valor)}</td>
+              <td class="nr valor">${fmtBRL(t.aPagar)}</td>
+              <td><span class="status-chip ${t.situacao.toLowerCase()==='aberto'?'aberto':'pago'}">${t.situacao}</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('sup-list').innerHTML=html;
+}
+
+function toggleSup(id){
+  document.getElementById(id).classList.toggle('expanded');
+}
+
+// ══════════════════════════════════════════════════════
+//  PROVISÃO DE COMPRA — CALCULADORA
+// ══════════════════════════════════════════════════════
+function onNParcelasChange(){
+  const n=parseInt(document.getElementById('bf-parcelas').value);
+  document.getElementById('g-p1').style.display='';
+  document.getElementById('g-p2').style.display=n>=2?'':'none';
+  document.getElementById('g-p3').style.display=n>=3?'':'none';
+  document.getElementById('g-p4').style.display=n>=4?'':'none';
+  previewBudget();
+}
+
+function getPrazos(){
+  const n=parseInt(document.getElementById('bf-parcelas').value);
+  const p1=parseInt(document.getElementById('bf-p1').value)||0;
+  const p2=parseInt(document.getElementById('bf-p2').value)||0;
+  const p3=parseInt(document.getElementById('bf-p3').value)||0;
+  const p4=parseInt(document.getElementById('bf-p4').value)||0;
+  return [p1,...(n>=2?[p2]:[]),...(n>=3?[p3]:[]),...(n>=4?[p4]:[])].filter(Boolean);
+}
+
+// Vincula tag de fornecedor quando coincide com importado
+function onFornInput(inp){
+  const val   = inp.value.trim().toUpperCase();
+  const known = new Set(DB.contasAPagar.map(p=>p.fornecedor.trim().toUpperCase()));
+  const tag   = document.getElementById('bf-forn-tag');
+  if(!val){ tag.style.display='none'; return; }
+  const match = known.has(val);
+  tag.style.display='block';
+  tag.innerHTML=`<span class="forn-tag ${match?'':'unknown'}">${match?'✓ Vinculado ao Bling':'Fornecedor não importado'}</span>`;
+  previewBudget();
+}
+
+function previewBudget(){
+  const dataStr = document.getElementById('bf-data').value;
+  const rawVal  = document.getElementById('bf-valor').value;
+  const valor   = parseMoney(rawVal.replace(/\./g,'').replace(',','.'));
+  const prazos  = getPrazos();
+  const el      = document.getElementById('bf-preview');
+
+  if(!dataStr||valor<=0||!prazos.length){
+    el.innerHTML='<div class="preview-empty"><p>Preencha Valor, Data e Prazos para visualizar.</p></div>';
+    return;
+  }
+
+  const parcela = valor/prazos.length;
+  const base    = new Date(dataStr+'T00:00:00');
+  const groups  = groupByMonth(DB.contasAPagar);
+
+  let html=`<div class="preview-total">Total: <strong>${fmtBRL(valor)}</strong> · ${prazos.length} pagamento${prazos.length>1?'s':''} de <strong>${fmtBRL(parcela)}</strong></div><div class="parcelas-list">`;
+
+  prazos.forEach((dias,i)=>{
+    const venc = new Date(base);
+    venc.setDate(venc.getDate()+dias);
+    const k      = venc.getFullYear()+'-'+String(venc.getMonth()).padStart(2,'0');
+    const atual  = (groups[k]?.items||[]).reduce((s,r)=>s+r.aPagar,0);
+    const proj   = atual+parcela;
+    const st     = monthStatus(proj);
+
+    html+=`<div class="parcela p-${st}">
+      <div class="p-left">
+        <div class="p-ord">${i+1}º Pagamento — ${dias} dias</div>
+        <div class="p-date">${venc.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'long',year:'numeric'})}</div>
+        <div class="p-mes">${MESES[venc.getMonth()]}/${venc.getFullYear()}</div>
+      </div>
+      <div class="p-right">
+        <div class="p-val">${fmtBRL(parcela)}</div>
+        <div class="p-impact">Mês: ${fmtBRL(atual)} → ${fmtBRL(proj)}</div>
+      </div>
+    </div>`;
+  });
+
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function addSim(){
+  const forn    = document.getElementById('bf-forn').value.trim();
+  const dataStr = document.getElementById('bf-data').value;
+  const rawVal  = document.getElementById('bf-valor').value;
+  const cat     = document.getElementById('bf-cat').value.trim();
+  const resp    = document.getElementById('bf-resp').value.trim();
+  const cond    = document.getElementById('bf-cond').value.trim();
+  const obs     = document.getElementById('bf-obs').value.trim();
+  const prazos  = getPrazos();
+
+  if(!forn||!dataStr||!rawVal){ showToast('Preencha Fornecedor, Data e Valor.'); return; }
+  const valor = parseMoney(rawVal.replace(/\./g,'').replace(',','.'));
+  if(valor<=0){ showToast('Valor inválido.'); return; }
+
+  const parcela = valor/prazos.length;
+  const base    = new Date(dataStr+'T00:00:00');
+
+  const parcelas = prazos.map((dias,i)=>{
+    const venc=new Date(base);
+    venc.setDate(venc.getDate()+dias);
+    return {ordem:i+1, prazo:dias, valor:parcela, vencimento:venc.toLocaleDateString('pt-BR')};
+  });
+
+  DB.comprasSimuladas.push({
+    id:          genId(),
+    fornecedor:  forn.toUpperCase(),
+    categoria:   cat||'—',
+    dataCompra:  new Date(dataStr+'T00:00:00').toLocaleDateString('pt-BR'),
+    valorTotal:  valor,
+    condicao:    cond||prazos.join('/')+' dias',
+    parcelas,
+    responsavel: resp,
+    observacao:  obs,
+    criadoEm:    new Date().toISOString()
+  });
+
+  persistLocal();
+  clearBF();
+  renderSimList();
+  renderMonthCards();
+  updateKPIs();
+  showToast('Provisão adicionada!');
+}
+
+function clearBF(){
+  ['bf-forn','bf-data','bf-valor','bf-cat','bf-resp','bf-cond','bf-obs'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('bf-forn-tag').style.display='none';
+  document.getElementById('bf-parcelas').value='2';
+  document.getElementById('bf-p1').value='30';
+  document.getElementById('bf-p2').value='60';
+  document.getElementById('bf-p3').value='90';
+  document.getElementById('bf-p4').value='120';
+  onNParcelasChange();
+  document.getElementById('bf-preview').innerHTML='<div class="preview-empty"><p>Preencha os campos para visualizar a provisão.</p></div>';
+}
+
+function renderSimList(){
+  const el=document.getElementById('sim-list');
+  if(!DB.comprasSimuladas.length){
+    el.innerHTML='<div class="empty-state"><h3>Nenhuma provisão ativa</h3><p>Adicione compras acima para simular o impacto no caixa.</p></div>';
+    return;
+  }
+  const known=new Set(DB.contasAPagar.map(p=>p.fornecedor.trim().toUpperCase()));
+  el.innerHTML=DB.comprasSimuladas.map(c=>{
+    const isKnown=known.has(c.fornecedor.trim().toUpperCase());
+    const tag=isKnown
+      ?`<span class="forn-tag" style="margin-left:8px;vertical-align:middle">✓ Bling</span>`
+      :`<span class="forn-tag unknown" style="margin-left:8px;vertical-align:middle">Novo</span>`;
+    return `<div class="sim-item">
+      <div>
+        <div class="si-name">${c.fornecedor}${tag}</div>
+        <div class="si-meta">Categoria: <strong>${c.categoria||'—'}</strong> · Compra: ${c.dataCompra} · Cond.: ${c.condicao} · Resp.: ${c.responsavel||'—'}</div>
+        <div class="si-parc">${c.parcelas.map(p=>`${p.ordem}º pgto: ${p.vencimento} — ${fmtBRL(p.valor)} (${p.prazo}d)`).join(' · ')}</div>
+        ${c.observacao?`<div class="si-obs">${c.observacao}</div>`:''}
+      </div>
+      <div class="si-right">
+        <div class="si-total">${fmtBRL(c.valorTotal)}</div>
+        <button class="si-del" onclick="removeSim('${c.id}')">Remover</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function removeSim(id){
+  DB.comprasSimuladas=DB.comprasSimuladas.filter(c=>c.id!==id);
+  persistLocal(); renderSimList(); renderMonthCards(); updateKPIs();
+  showToast('Simulação removida.');
+}
+
+function confirmClearSim(){
+  showModal(
+    'Limpar Simulações',
+    'Todas as compras simuladas serão removidas.',
+    `<p><strong>Simulações ativas:</strong> ${DB.comprasSimuladas.length}</p>`,
+    ()=>{ DB.comprasSimuladas=[]; persistLocal(); renderMonthCards(); renderSimList(); updateKPIs(); showToast('Simulações removidas.'); }
+  );
+}
+
+// ══════════════════════════════════════════════════════
+//  CENÁRIO
+// ══════════════════════════════════════════════════════
+function renderScenario(){
+  const el      = document.getElementById('scenario-wrap');
+  const groups  = groupByMonth(DB.contasAPagar);
+  const impact  = simImpactByMonth();
+  const allKeys = new Set([...Object.keys(groups),...Object.keys(impact)]);
+
+  if(!allKeys.size){
+    el.innerHTML='<div class="empty-state"><h3>Sem dados</h3><p>Importe o relatório do Bling ou adicione simulações.</p></div>';
+    return;
+  }
+
+  const rows=[...allKeys].sort().map(key=>{
+    const grp    = groups[key];
+    const atual  = grp?grp.items.reduce((s,r)=>s+r.aPagar,0):0;
+    const sim    = impact[key]||0;
+    const proj   = atual+sim;
+    const diff   = sim;
+    const st     = monthStatus(proj);
+    const [y,mi] = key.split('-');
+    const nome   = MESES[parseInt(mi)]+'/'+y;
+    const dot    = `<span class="dot dot-${st}"></span>`;
+    const stLbl  = {green:'Saudável',yellow:'Atenção',red:'Crítico'}[st];
+    const stColor= {green:'var(--green)',yellow:'var(--yellow)',red:'var(--red)'}[st];
+    return `<tr>
+      <td class="st-mes">${dot}${nome}</td>
+      <td class="st-nr">${fmtBRL(atual)}</td>
+      <td class="st-nr" style="color:var(--secondary);font-weight:700">${sim>0?fmtBRL(sim):'—'}</td>
+      <td class="st-nr st-proj">${fmtBRL(proj)}</td>
+      <td class="st-nr st-diff">${diff>0?'+ '+fmtBRL(diff):'—'}</td>
+      <td>${dot}<span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${stColor}">${stLbl}</span></td>
+    </tr>`;
+  });
+
+  el.innerHTML=`<table class="stbl">
+    <thead><tr>
+      <th>Mês</th><th class="nr">Atual (Bling)</th>
+      <th class="nr">Simulado</th><th class="nr">Projetado</th>
+      <th class="nr">Diferença</th><th>Status</th>
+    </tr></thead>
+    <tbody>${rows.join('')}</tbody>
+  </table>`;
+}
+
+// ══════════════════════════════════════════════════════
+//  HISTÓRICO
+// ══════════════════════════════════════════════════════
+function renderHistory(){
+  const el=document.getElementById('hist-wrap');
+  if(!DB.historicoImportacoes.length){
+    el.innerHTML='<div class="empty-state"><h3>Sem histórico</h3><p>Nenhuma importação registrada ainda.</p></div>';
+    return;
+  }
+  const rows=[...DB.historicoImportacoes].reverse().map((h,i)=>`<tr>
+    <td>${DB.historicoImportacoes.length-i}</td>
+    <td>${h.data} ${h.hora}</td>
+    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.arquivo}</td>
+    <td style="text-align:right">${h.titulos}</td>
+    <td style="text-align:right">${h.fornecedores}</td>
+    <td style="text-align:right;font-weight:700;color:var(--primary)">${fmtBRL(h.valorTotal)}</td>
+  </tr>`).join('');
+  el.innerHTML=`<table class="htbl">
+    <thead><tr>
+      <th>#</th><th>Data / Hora</th><th>Arquivo</th>
+      <th style="text-align:right">Títulos</th>
+      <th style="text-align:right">Fornecedores</th>
+      <th style="text-align:right">Total Importado</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ══════════════════════════════════════════════════════
+//  PERSISTÊNCIA
+// ══════════════════════════════════════════════════════
+function persistLocal(){
+  try{ localStorage.setItem('srvgas_budget_v2',JSON.stringify(DB)); }catch(e){}
+}
+
+function loadLocal(){
+  try{
+    const raw=localStorage.getItem('srvgas_budget_v2');
+    if(raw){ const parsed=JSON.parse(raw); DB={...DB,...parsed}; }
+  }catch(e){}
+}
+
+function saveDB(){
+  const json=JSON.stringify(DB,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url =URL.createObjectURL(blob);
+  const a   =document.createElement('a');
+  a.href    =url;
+  a.download=`srvgas-budget-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Base salva como JSON.');
+}
+
+function handleLoadDB(input){
+  const file=input.files[0]; if(!file) return;
+  input.value='';
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const loaded=JSON.parse(e.target.result);
+      showModal(
+        'Carregar Base de Dados',
+        'Os dados atuais serão substituídos pelos dados do arquivo.',
+        `<p><strong>Arquivo:</strong> ${file.name}</p>
+         <p><strong>Contas a pagar:</strong> ${(loaded.contasAPagar||[]).length} títulos</p>
+         <p><strong>Simulações:</strong> ${(loaded.comprasSimuladas||[]).length}</p>`,
+        ()=>{
+          DB={...DB,...loaded};
+          persistLocal();
+          refreshDashboard();
+          loadParamsUI();
+          showToast('Base carregada com sucesso.');
+        }
+      );
+    }catch(err){ showToast('Erro ao ler arquivo JSON.'); }
+  };
+  reader.readAsText(file);
+}
+
+// ══════════════════════════════════════════════════════
+//  PARÂMETROS
+// ══════════════════════════════════════════════════════
+function saveParams(){
+  DB.parametros.limiteSaudavel = parseMoney(document.getElementById('p-saudavel').value.replace(/[^0-9,]/g,'').replace(',','.'));
+  DB.parametros.limiteAtencao  = parseMoney(document.getElementById('p-atencao').value.replace(/[^0-9,]/g,'').replace(',','.'));
+  DB.parametros.limiteCritico  = parseMoney(document.getElementById('p-critico').value.replace(/[^0-9,]/g,'').replace(',','.'));
+  DB.parametros.nParcelas      = parseInt(document.getElementById('p-parcela').value)||2;
+  DB.parametros.anoReferencia  = parseInt(document.getElementById('p-ano').value)||new Date().getFullYear();
+  persistLocal();
+  renderMonthCards();
+}
+
+function loadParamsUI(){
+  const p=DB.parametros;
+  document.getElementById('p-saudavel').value = fmtNumBR(p.limiteSaudavel||100000);
+  document.getElementById('p-atencao').value  = fmtNumBR(p.limiteAtencao||200000);
+  document.getElementById('p-critico').value  = fmtNumBR(p.limiteCritico||200000);
+  document.getElementById('p-parcela').value  = String(p.nParcelas||2);
+  document.getElementById('p-ano').value      = p.anoReferencia||new Date().getFullYear();
+}
+
+// ══════════════════════════════════════════════════════
+//  DATALIST FORNECEDORES
+// ══════════════════════════════════════════════════════
+function populateDatalist(){
+  const set=new Set(DB.contasAPagar.map(p=>p.fornecedor.trim().toUpperCase()));
+  document.getElementById('forn-dl').innerHTML=[...set].sort().map(f=>`<option value="${f}">`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  MODAL
+// ══════════════════════════════════════════════════════
+let _mCb=null;
+
+function showModal(title,sub,statsHtml,cb,errOnly=false){
+  setTxt('m-title',title);
+  setTxt('m-sub',sub);
+  const sEl=document.getElementById('m-stats');
+  if(statsHtml){ sEl.style.display='block'; sEl.innerHTML=statsHtml; }
+  else{ sEl.style.display='none'; }
+  _mCb=cb;
+  const okBtn=document.getElementById('m-ok-btn');
+  const cnBtn=document.getElementById('m-cancel-btn');
+  if(errOnly){ okBtn.style.display='none'; cnBtn.textContent='Fechar'; }
+  else       { okBtn.style.display=''; cnBtn.textContent='Cancelar'; }
+  okBtn.onclick=()=>{ closeModal(); if(_mCb)_mCb(); };
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════════
+//  PROGRESS & TOAST
+// ══════════════════════════════════════════════════════
+function showProg(msg){
+  document.getElementById('prog-text').textContent=msg;
+  document.getElementById('prog-bar').classList.add('show');
+}
+function hideProg(){
+  document.getElementById('prog-bar').classList.remove('show');
+}
+let _tt=null;
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+// ══════════════════════════════════════════════════════
+//  FORMATAÇÃO
+// ══════════════════════════════════════════════════════
+function fmtBRL(v){
+  return (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+}
+function fmtBRLk(v){
+  if(!v) return 'R$ 0';
+  if(v>=1000000) return 'R$ '+(v/1000000).toFixed(1)+'M';
+  if(v>=1000)    return 'R$ '+Math.round(v/1000)+'k';
+  return fmtBRL(v);
+}
+function fmtNumBR(v){
+  return (v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+}
+function setTxt(id,val){
+  const el=document.getElementById(id);
+  if(el) el.textContent=val;
+}
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+(function init(){
+  loadLocal();
+  // ECOSSISTEMA: contas a pagar vêm do Bling (window.BASE_CAIXA), preservando simulações/parâmetros locais.
+  if(window.BASE_CAIXA && Array.isArray(window.BASE_CAIXA.contasAPagar) && window.BASE_CAIXA.contasAPagar.length){
+    DB.contasAPagar = window.BASE_CAIXA.contasAPagar;
+    try{ const _h=document.getElementById('header-date'); const _m=window.BASE_CAIXA.meta||{};
+      if(_h) _h.title='Contas a pagar do Bling · '+(_m.data||'')+' · '+(_m.titulos||0)+' títulos'; }catch(e){}
+  }
+  loadParamsUI();
+  refreshDashboard();
+  onNParcelasChange();
+  renderSimList();
+})();
+</script>
+</body>
+</html>

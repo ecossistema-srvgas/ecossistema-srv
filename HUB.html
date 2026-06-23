@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="SRV GÁS® — Ecossistema de Estoque · Uso interno">
+<meta name="author" content="SRV GÁS®">
+<title>SRV GÁS® — Ecossistema de Estoque</title>
+<!-- ── Acesso restrito (senha) ───────────────────────────────────────────── -->
+<style id="srv-auth-style">body{visibility:hidden}html.srv-auth-ok body{visibility:visible}
+#srv-auth{position:fixed;inset:0;z-index:2147483647;background:#0D1B3E;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',Arial,sans-serif}
+#srv-auth .box{background:#fff;padding:32px 28px;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;width:280px}
+#srv-auth h2{margin:0 0 4px;color:#393E9C;font-size:20px;font-weight:700}
+#srv-auth p{margin:0 0 18px;color:#6B7BAE;font-size:13px}
+#srv-auth input{width:100%;padding:11px 12px;border:2px solid #D6E0F0;border-radius:8px;font-size:18px;text-align:center;letter-spacing:4px;box-sizing:border-box;outline:none}
+#srv-auth input:focus{border-color:#393E9C}
+#srv-auth button{width:100%;margin-top:12px;padding:11px;border:0;border-radius:8px;background:#393E9C;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+#srv-auth .err{color:#C0392B;font-size:12px;height:14px;margin-top:8px}</style>
+<script>
+(function(){
+  var SENHA='1234', KEY='srv_auth_hub';
+  function libera(){document.documentElement.classList.add('srv-auth-ok');var o=document.getElementById('srv-auth');if(o)o.remove();}
+  if(sessionStorage.getItem(KEY)==='ok'){document.addEventListener('DOMContentLoaded',libera);return;}
+  document.addEventListener('DOMContentLoaded',function(){
+    var ov=document.createElement('div');ov.id='srv-auth';
+    ov.innerHTML='<div class="box"><h2>SRV GÁS®</h2><p>Acesso restrito</p><input id="srv-auth-in" type="password" inputmode="numeric" autocomplete="off" placeholder="••••"><div class="err" id="srv-auth-err"></div><button id="srv-auth-btn">Entrar</button></div>';
+    document.documentElement.appendChild(ov);
+    var inp=document.getElementById('srv-auth-in');inp.focus();
+    function tenta(){if(inp.value===SENHA){sessionStorage.setItem(KEY,'ok');libera();}else{document.getElementById('srv-auth-err').textContent='Senha incorreta';inp.value='';inp.focus();}}
+    document.getElementById('srv-auth-btn').addEventListener('click',tenta);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter')tenta();});
+  });
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- ECOSSISTEMA SRV — bases do Bling (geradas pelo Estoquista) -->
+<script src="../base_estoque.js"></script>
+<script src="../base_caixa.js"></script>
+<script src="../base_compras.js"></script>
+<style>
+:root {
+  --primary:#393E9C; --primary-dark:#2a2f7a; --primary-light:#4a51c4;
+  --secondary:#69BAEF; --secondary-light:#a8d8f5;
+  --ink:#0D1B3E; --bg:#F0F4FA; --card:#FFFFFF; --border:#D6E0F0; --muted:#6B7BAE;
+  --green:#0E7C4A; --green-bg:#E6F5EE;
+  --yellow:#B07800; --yellow-bg:#FFF8E0;
+  --red:#C0392B; --red-bg:#FDECEA;
+  --gray:#8A96B0; --gray-bg:#F0F2F8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+
+/* ── HEADER ── */
+.header{background:var(--primary);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(57,62,156,.4);}
+.logo{display:flex;flex-direction:column;}
+.logo-text{color:#fff;font-size:18px;font-weight:700;letter-spacing:.06em;}
+.logo-text sup{color:var(--secondary);font-size:11px;}
+.logo-slogan{color:var(--secondary-light);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-top:1px;}
+.header-date{color:var(--secondary-light);font-size:10px;font-family:'DM Mono',monospace;}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary) 55%,var(--primary-light) 100%);padding:36px 28px 34px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 78% 50%,rgba(105,186,239,.22) 0%,transparent 60%);}
+.hero-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center;position:relative;}
+.hero-tag{display:inline-block;background:rgba(105,186,239,.2);border:1px solid rgba(105,186,239,.35);color:var(--secondary);font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;padding:3px 12px;border-radius:20px;margin-bottom:10px;}
+.hero-title{color:#fff;font-size:28px;font-weight:700;line-height:1.2;letter-spacing:.02em;}
+.hero-title em{color:var(--secondary);font-style:normal;}
+.hero-sub{color:rgba(255,255,255,.65);font-size:13px;font-weight:500;margin-top:8px;line-height:1.5;}
+.hero-kpis{display:flex;gap:16px;margin-top:20px;flex-wrap:wrap;}
+.kpi{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:12px 18px;text-align:center;min-width:96px;}
+.kpi-val{font-size:28px;font-weight:700;color:#fff;line-height:1;font-family:'DM Mono',monospace;}
+.kpi-val.red{color:#ff9090;} .kpi-val.yellow{color:#ffd970;} .kpi-val.green{color:#7ddfb0;}
+.kpi-label{font-size:9px;color:rgba(255,255,255,.55);letter-spacing:.14em;text-transform:uppercase;margin-top:5px;}
+.hero-right{display:flex;flex-direction:column;gap:10px;align-items:flex-end;}
+.hero-btn{padding:10px 20px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;border:none;display:flex;align-items:center;gap:8px;transition:all .15s;white-space:nowrap;}
+.hero-btn.primary{background:var(--secondary);color:var(--primary-dark);}
+.hero-btn.primary:hover{background:#4aaee8;}
+.status-pills{display:flex;flex-direction:column;gap:6px;align-items:flex-end;}
+.spill{display:flex;align-items:center;gap:7px;font-size:10px;font-family:'DM Mono',monospace;color:rgba(255,255,255,.7);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:4px 11px;}
+.dot{width:7px;height:7px;border-radius:50%;}
+.dot.ok{background:#7ddfb0;} .dot.warn{background:#ffd970;} .dot.bad{background:#ff9090;}
+
+/* ── MÓDULOS ── */
+.mod-wrap{max-width:1100px;margin:0 auto;padding:22px 28px 56px;}
+.mod-eyebrow{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.mod-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px;}
+.mod-card{display:block;text-decoration:none;color:inherit;background:var(--card);border:1.5px solid var(--border);border-radius:8px;padding:22px 20px 20px;position:relative;overflow:hidden;transition:box-shadow .15s,transform .15s;}
+.mod-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.mod-card.s-blue::before{background:var(--primary);}
+.mod-card.s-yellow::before{background:var(--yellow);}
+.mod-card.s-green::before{background:var(--green);}
+.mod-card.s-red::before{background:var(--red);}
+.mod-card:hover{box-shadow:0 8px 26px rgba(57,62,156,.14);transform:translateY(-3px);border-color:#c2d0ea;}
+.mod-card:focus-visible{outline:2px solid var(--primary);outline-offset:2px;}
+.mod-ic{font-size:24px;line-height:1;}
+.mod-name{font-size:15px;font-weight:700;color:var(--primary);letter-spacing:.05em;text-transform:uppercase;margin:12px 0 7px;}
+.mod-desc{font-size:12.5px;font-weight:500;color:var(--muted);line-height:1.5;}
+.mod-go{margin-top:14px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--secondary);display:flex;align-items:center;gap:5px;}
+.mod-card.s-yellow .mod-name{color:var(--yellow);}
+.mod-card.s-green .mod-name{color:var(--green);}
+.mod-card.s-red .mod-name{color:var(--red);}
+
+.foot{max-width:1100px;margin:0 auto;padding:0 28px 40px;font-size:10px;font-family:'DM Mono',monospace;color:var(--gray);}
+
+/* ── MODAL ── */
+.modal{display:none;position:fixed;inset:0;background:rgba(13,27,62,.55);align-items:center;justify-content:center;z-index:300;}
+.modal.show{display:flex;}
+.box{background:var(--card);border-radius:10px;padding:26px 28px;max-width:480px;width:90%;border-top:4px solid var(--primary);}
+.box h2{font-size:16px;font-weight:700;color:var(--primary);letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px;}
+.box p{font-size:13px;font-weight:500;line-height:1.6;color:var(--ink);margin-bottom:10px;}
+.box code{background:var(--gray-bg);padding:2px 7px;border-radius:4px;font-family:'DM Mono',monospace;font-size:12px;color:var(--primary-dark);}
+.box .muted{color:var(--muted);font-size:11.5px;}
+.box .close{margin-top:8px;background:var(--primary);color:#fff;border:none;border-radius:6px;padding:9px 18px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;}
+.box .close:hover{background:var(--primary-light);}
+
+@media (max-width:760px){
+  .hero-inner{grid-template-columns:1fr;}
+  .hero-right{align-items:flex-start;}
+  .status-pills{align-items:flex-start;}
+  .mod-grid{grid-template-columns:1fr;}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-text">SRV GÁS<sup>®</sup></div>
+    <div class="logo-slogan">Ecossistema de Estoque</div>
+  </div>
+  <div class="header-date" id="hdate"></div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <span class="hero-tag">Controladoria de Estoque & Compras</span>
+      <div class="hero-title">Central de <em>Estoque & Compras</em></div>
+      <div class="hero-sub">Estoque, Budget e Conciliação — base única do Bling, gerida pelo Estoquista.</div>
+      <div class="hero-kpis" id="kpis"></div>
+    </div>
+    <div class="hero-right">
+      <button class="hero-btn primary" onclick="document.getElementById('m').classList.add('show')">🔄 Atualizar do Bling</button>
+      <div class="status-pills" id="status"></div>
+    </div>
+  </div>
+</section>
+
+<main class="mod-wrap">
+  <div class="mod-eyebrow">Módulos</div>
+  <div class="mod-grid">
+    <a class="mod-card s-blue" href="Estoque.html">
+      <div class="mod-ic">📦</div>
+      <div class="mod-name">Estoque</div>
+      <div class="mod-desc">Posição por SKU, saldo loja/expedição, consumo e duração de cobertura. Rupturas e itens a comprar.</div>
+      <div class="mod-go">Abrir módulo →</div>
+    </a>
+    <a class="mod-card s-yellow" href="Budget.html">
+      <div class="mod-ic">💰</div>
+      <div class="mod-name">Budget de Compras</div>
+      <div class="mod-desc">Contas a pagar do Bling por mês, limites de caixa e simulação de novas compras parceladas.</div>
+      <div class="mod-go">Abrir módulo →</div>
+    </a>
+    <a class="mod-card s-green" href="Conciliacao.html">
+      <div class="mod-ic">🔀</div>
+      <div class="mod-name">Conciliação</div>
+      <div class="mod-desc">Cruza o plano de compra com os compromissos de caixa — o que pedir sem estourar o mês.</div>
+      <div class="mod-go">Abrir módulo →</div>
+    </a>
+    <a class="mod-card s-red" href="Compras.html">
+      <div class="mod-ic">🛒</div>
+      <div class="mod-name">Plano de Compra</div>
+      <div class="mod-desc">Comprador Estratégico: o que comprar, de quem e com que prioridade — consolidado por fornecedor, ruptura primeiro.</div>
+      <div class="mod-go">Abrir módulo →</div>
+    </a>
+  </div>
+</main>
+
+<div class="foot" id="foot">Estoquista · SRV Gás · base gerada do Bling por _estoquista/coletar.js</div>
+
+<div class="modal" id="m">
+  <div class="box">
+    <h2>Atualizar dados do Bling</h2>
+    <p>Os painéis rodam localmente (<code>file://</code>), então a atualização é feita por um comando na pasta — não pelo navegador.</p>
+    <p><strong>Agora:</strong> abra <code>_estoquista</code> e dê duplo-clique em <code>ATUALIZAR.bat</code>. Ao terminar, recarregue esta página (F5).</p>
+    <p class="muted">A atualização também roda sozinha todo dia de madrugada (03h), com relatório no Slack.</p>
+    <button class="close" onclick="document.getElementById('m').classList.remove('show')">Entendi</button>
+  </div>
+</div>
+
+<script>
+const fmtK = n => 'R$ ' + Math.round((n||0)/1000) + 'k';
+
+function idadeBadge(metaData){
+  if(!metaData) return {cls:'bad', txt:'sem dados'};
+  const m = metaData.match(/(\d{2})\/(\d{2})\/(\d{4}),?\s*(\d{2}):(\d{2})/);
+  if(!m) return {cls:'warn', txt:metaData};
+  const dt = new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]);
+  const horas = (Date.now()-dt)/3600000;
+  const cls = horas<=26 ? 'ok' : horas<=72 ? 'warn' : 'bad';
+  const txt = horas<1 ? 'agora há pouco' : horas<24 ? Math.round(horas)+'h atrás' : Math.round(horas/24)+'d atrás';
+  return {cls, txt};
+}
+
+(function(){
+  document.getElementById('hdate').textContent =
+    new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+
+  const est = window.BASE_ESTOQUE||{}, cax = window.BASE_CAIXA||{};
+  const dadosTodos = est.dados||[], contas = cax.contasAPagar||[];
+  // indicadores operacionais só de produtos simples (kits têm estoque virtual)
+  const _s = dadosTodos.filter(d=>d.formato==='S');
+  const dados = _s.length ? _s : dadosTodos;
+  const mE = est.meta||{}, mC = cax.meta||{};
+
+  // KPIs (estilo hero do Estoque)
+  const urgentes = dados.filter(d=>d.duracao<=15).length;
+  const aComprar = dados.filter(d=>(d.proj_compra||0)>0 && d.estoque_total<d.proj_compra);
+  const valPlano = aComprar.reduce((s,d)=>s+Math.ceil(d.proj_compra-d.estoque_total)*(d.custo||0),0);
+  const totalCaixa = contas.reduce((s,c)=>s+(c.aPagar||0),0);
+
+  document.getElementById('kpis').innerHTML =
+    `<div class="kpi"><div class="kpi-val">${(dados.length||0).toLocaleString('pt-BR')}</div><div class="kpi-label">SKUs</div></div>`+
+    `<div class="kpi"><div class="kpi-val red">${urgentes}</div><div class="kpi-label">Urgentes ≤15d</div></div>`+
+    `<div class="kpi"><div class="kpi-val yellow">${fmtK(valPlano)}</div><div class="kpi-label">Plano compra</div></div>`+
+    `<div class="kpi"><div class="kpi-val">${fmtK(totalCaixa)}</div><div class="kpi-label">A pagar</div></div>`;
+
+  // Status das bases
+  const bE = idadeBadge(mE.data), bC = idadeBadge(mC.data);
+  document.getElementById('status').innerHTML =
+    `<div class="spill"><span class="dot ${bE.cls}"></span> Estoque · ${bE.txt}</div>`+
+    `<div class="spill"><span class="dot ${bC.cls}"></span> Caixa · ${bC.txt}</div>`;
+
+  document.getElementById('foot').textContent =
+    `Estoquista · SRV Gás · base ${mE.data||'—'} · histórico ${mE.baseline_dias||60}d · projeção compra ${mE.horizonte_compra_dias||120}d`;
+})();
+</script>
+</body>
+</html>
