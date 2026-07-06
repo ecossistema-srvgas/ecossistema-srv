@@ -471,7 +471,7 @@ tr:hover td{background:#EDF2FF;}
       <div class="hero-left">
         <div class="hero-tag">Painel de Provisão · 3º Trimestre 2025</div>
         <div class="hero-title">Central de Gestão<br>de <em>Estoque SRV GÁS</em></div>
-        <div class="hero-sub">Base Dez/2025 – Mar/2026 · 369 SKUs · 21 fornecedores · Período de referência: 120 dias</div>
+        <div class="hero-sub" id="hero-sub-periodo">Base Dez/2025 – Mar/2026 · 369 SKUs · 21 fornecedores · Período de referência: 120 dias</div>
         <div class="hero-kpis">
           <div class="kpi"><div class="kpi-val red">30</div><div class="kpi-label">Urgentes</div></div>
           <div class="kpi"><div class="kpi-val yellow">39</div><div class="kpi-label">Atenção</div></div>
@@ -490,7 +490,7 @@ tr:hover td{background:#EDF2FF;}
         <button class="hero-btn outline" onclick="switchView('tabela',document.querySelectorAll('.h-tab')[2])">
           ☰ Lista Completa
         </button>
-        <button class="hero-btn outline" onclick="alert('Os saldos (Estoque 1 / Expedição 2) são atualizados automaticamente do Bling.\n\nAtualizar agora: rode  _estoquista\\ATUALIZAR.bat  e recarregue (F5).\nAtualização automática todo dia às 03h.')" title="Como atualizar os saldos do Bling">
+        <button class="hero-btn outline" id="btn-atualizar-bling" title="Como atualizar os saldos do Bling e qual período está sendo considerado">
           🔄 Atualizar do Bling
         </button>
       </div>
@@ -1494,6 +1494,29 @@ if(window.BASE_ESTOQUE && Array.isArray(window.BASE_ESTOQUE.dados) && window.BAS
     const _b=document.getElementById('persist-msg');
     if(_b){_b.textContent='🔄 Base Bling · '+(_m.data||'')+' · '+(_m.total||0)+' itens';
       const _bar=document.getElementById('persist-bar'); if(_bar)_bar.classList.add('show');}
+
+    // Período considerado no cálculo de consumo diário (API 60d + relatório manual, se houver) —
+    // antes disso o topo mostrava um texto fixo de um período antigo, sem relação com a base real.
+    const _pr=_m.previsao_relatorio;
+    const _nForn=new Set(_src.map(d=>d.fornecedor).filter(Boolean)).size;
+    const _hs=document.getElementById('hero-sub-periodo');
+    if(_hs){
+      _hs.textContent=_pr
+        ? 'Base '+(_m.data||'—')+' · '+(_m.total||0)+' SKUs · '+_nForn+' fornecedores · Consumo diário: API ('+(_m.baseline_dias||60)+'d) + Relatório '+_pr.periodo_ini+'–'+_pr.periodo_fim+' ('+_pr.dias_periodo+'d fixos) — usa o maior por SKU'
+        : 'Base '+(_m.data||'—')+' · '+(_m.total||0)+' SKUs · '+_nForn+' fornecedores · Consumo diário: janela API de '+(_m.baseline_dias||60)+' dias';
+    }
+    const _btnAtt=document.getElementById('btn-atualizar-bling');
+    if(_btnAtt){
+      _btnAtt.onclick=function(){
+        let msg='Última coleta: '+(_m.data||'—')+' ('+(_m.total||0)+' itens)\n\n';
+        msg+='Consumo diário considera a janela de '+(_m.baseline_dias||60)+' dias via API do Bling';
+        msg+=_pr
+          ? (' + o relatório manual de '+_pr.periodo_ini+' a '+_pr.periodo_fim+' ('+_pr.dias_periodo+' dias fixos, importado em '+_pr.importado_em+'), usando sempre o MAIOR valor por SKU.\n('+_pr.produtos_relatorio_venceu+' SKUs calibrados pelo relatório, '+_pr.produtos_api_venceu+' pela API nesta rodada.)')
+          : ' (sem relatório manual de calibração importado no momento).';
+        msg+='\n\nAtualizar agora: rode  _estoquista\\ATUALIZAR.bat  e recarregue (F5), ou mande "atualizar estoque" no canal #AtualizaSRV do Slack.\nAtualização automática: 03:00, 10:00 e 16:50.';
+        alert(msg);
+      };
+    }
   }catch(e){console.error('Falha ao aplicar BASE_ESTOQUE:',e);restaurarDados();}
 } else {
   restaurarDados(); // fallback: arquivo SharePoint / localStorage
