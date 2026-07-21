@@ -934,9 +934,10 @@ function renderTable(){
     const s=st(d),cv=compra(d,prazoAtivo),slbl={urgente:'URGENTE',atencao:'ATENÇÃO',ok:'OK',inativo:'SEM MOV.'}[s];
     const p=pct(d),c2=col(d);
     const tr=document.createElement('tr');
+    const alertaCad=d.alerta_cadastro?`<span title="Cadastro incompleto no Bling (${d.alerta_cadastro_motivo||'revisar SKU/custo'}) — corrigir direto no Bling" style="color:var(--red);font-weight:800;cursor:help;margin-right:3px;">*</span>`:'';
     tr.innerHTML=`<td><span class="ftag" style="cursor:pointer" title="Clique para editar fornecedor" onclick="editarFornecedor('${d.sku.replace(/'/g,"\\'")}',this)">${d.fornecedor}</span></td>
-      <td class="pnome">${d.produto}</td>
-      <td class="mono">${d.sku}</td>
+      <td class="pnome">${alertaCad}${d.produto}</td>
+      <td class="mono">${d.sku||'<span style="color:var(--red);font-weight:700;">(sem SKU)</span>'}</td>
       <td class="nr">${fmt(d.estoque_loja)}</td>
       <td class="nr">${fmt(d.estoque_exp)}</td>
       <td class="nr"><strong>${fmt(d.estoque_total)}</strong></td>
